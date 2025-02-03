@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/auth_response.dart';
 import '../../core/constants/api_constants.dart';
+import 'dart:io';
 
 class AuthService {
   Future<AuthResponse> login(String email, String password) async {
@@ -32,34 +33,51 @@ class AuthService {
     }
   }
 
-  Future<AuthResponse> register(String name, String email, String password) async {
+  Future<AuthResponse> register({
+    required String name,
+    required String email,
+    required String password,
+    required String idUnit,
+    required String nik,
+    required File fotoKtp,
+    required String alamatAsal,
+    required String nomorWa,
+  }) async {
+    var request = http.MultipartRequest(
+      'POST',
+      Uri.parse('${ApiConstants.baseUrl}/register'),
+    );
+
+    // Tambahkan fields
+    request.fields.addAll({
+      'name': name,
+      'email': email,
+      'password': password,
+      'id_unit': idUnit,
+      'nik': nik,
+      'alamat_asal': alamatAsal,
+      'nomor_wa': nomorWa,
+    });
+
+    // Tambahkan file foto KTP
+    request.files.add(await http.MultipartFile.fromPath(
+      'foto_ktp',
+      fotoKtp.path,
+    ));
+
     try {
-      final response = await http.post(
-        Uri.parse('${ApiConstants.baseUrl}/register'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'name': name,
-          'email': email,
-          'password': password,
-          'password_confirmation': password,
-        }),
+      var response = await request.send();
+      var responseData = await response.stream.bytesToString();
+      var jsonResponse = json.decode(responseData);
+
+      return AuthResponse(
+        status: jsonResponse['status'],
+        message: jsonResponse['message'],
+        token: jsonResponse['token'],
+        user: jsonResponse['user'],
       );
-
-      if (response.statusCode == 200) {
-        final authResponse = AuthResponse.fromJson(json.decode(response.body));
-
-        // Simpan token
-        if (authResponse.token != null) {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('token', authResponse.token!);
-        }
-
-        return authResponse;
-      } else {
-        throw Exception('Failed to register: ${response.body}');
-      }
     } catch (e) {
-      throw Exception('Failed to register: $e');
+      throw Exception('Registration failed: $e');
     }
   }
 
@@ -79,6 +97,27 @@ class AuthService {
       } finally {
         await prefs.remove('token');
       }
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getKamarTersedia() async {
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConstants.baseUrl}/unit-kamar/available'), // Sesuaikan dengan endpoint API
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['data'] != null) {
+          return List<Map<String, dynamic>>.from(data['data']);
+        }
+      }
+      throw Exception('Gagal memuat data kamar');
+    } catch (e) {
+      throw Exception('Error: $e');
     }
   }
 }
