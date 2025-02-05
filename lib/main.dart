@@ -5,7 +5,7 @@ import 'data/services/auth_service.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login.dart';
 import 'screens/admin_dashboard.dart';
-import 'screens/dashboard_page.dart';
+import 'screens/users/dashboard_page.dart';
 
 void main() {
   runApp(MyApp());

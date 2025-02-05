@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:proyekkos/data/services/penyewa_service.dart';
 import 'package:intl/intl.dart';
-import 'package:proyekkos/screens/verifikasi_penyewa.dart';
+import 'package:proyekkos/screens/admin/verifikasi_penyewa.dart';
 
 class KelolaPenyewaPage extends StatefulWidget {
   @override

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:proyekkos/screens/bottom_navbar/account_screen.dart';
-import 'package:proyekkos/screens/bottom_navbar/contact_screen.dart';
-import 'package:proyekkos/screens/bottom_navbar/history_screen.dart';
-import 'package:proyekkos/screens/kelola_kamar.dart';
-import 'package:proyekkos/screens/kelola_penyewa.dart';
+import 'package:proyekkos/screens/admin/bottom_navbar/account_screen.dart';
+import 'package:proyekkos/screens/admin/bottom_navbar/contact_screen.dart';
+import 'package:proyekkos/screens/admin/bottom_navbar/history_screen.dart';
+import 'package:proyekkos/screens/admin/kelola_kamar.dart';
+import 'package:proyekkos/screens/admin/kelola_penyewa.dart';
 import 'package:proyekkos/widgets/custom_bottom_navbar.dart';
 
 
