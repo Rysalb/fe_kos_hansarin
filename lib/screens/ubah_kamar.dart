@@ -47,26 +47,26 @@ class _UbahKamarPageState extends State<UbahKamarPage> {
     _tipeKamarController = TextEditingController(text: widget.kamar['tipe_kamar']);
     _jumlahUnitController = TextEditingController(text: widget.kamar['unit_kamar'].length.toString());
     _hargaSewa1Controller = TextEditingController(
-      text: _formatToRupiah(widget.kamar['harga_sewa'].toString())
+      text: _formatToRupiah(widget.kamar['harga_sewa']?.toString().split('.')[0] ?? '')
     );
     _hargaSewa2Controller = TextEditingController(
       text: widget.kamar['harga_sewa1'] != null 
-        ? _formatToRupiah(widget.kamar['harga_sewa1'].toString()) 
+        ? _formatToRupiah(widget.kamar['harga_sewa1'].toString().split('.')[0]) 
         : ''
     );
     _hargaSewa3Controller = TextEditingController(
       text: widget.kamar['harga_sewa2'] != null 
-        ? _formatToRupiah(widget.kamar['harga_sewa2'].toString()) 
+        ? _formatToRupiah(widget.kamar['harga_sewa2'].toString().split('.')[0]) 
         : ''
     );
     _hargaSewa4Controller = TextEditingController(
       text: widget.kamar['harga_sewa3'] != null 
-        ? _formatToRupiah(widget.kamar['harga_sewa3'].toString()) 
+        ? _formatToRupiah(widget.kamar['harga_sewa3'].toString().split('.')[0]) 
         : ''
     );
     _hargaSewa5Controller = TextEditingController(
       text: widget.kamar['harga_sewa4'] != null 
-        ? _formatToRupiah(widget.kamar['harga_sewa4'].toString()) 
+        ? _formatToRupiah(widget.kamar['harga_sewa4'].toString().split('.')[0]) 
         : ''
     );
   }

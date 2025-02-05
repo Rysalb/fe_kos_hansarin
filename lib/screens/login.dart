@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:proyekkos/screens/register.dart';
 import '../blocs/auth/auth_bloc.dart';
+import '../blocs/auth/auth_state.dart';
+import '../blocs/auth/auth_event.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -24,18 +27,28 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: BlocConsumer<AuthBloc, AuthState>(
-        listener: (context, state) {
+        listener: (context, state) async {
           if (state is AuthSuccess) {
-            // Navigate berdasarkan role
-            if (state.user.role == 'admin') {
+            try {
+              if (state.user.role == 'admin') {
+                Navigator.pushReplacementNamed(context, '/admin/dashboard');
+              } else {
+                Navigator.pushReplacementNamed(context, '/dashboard');
+              }
+            } catch (e) {
               Navigator.pushReplacementNamed(context, '/admin/dashboard');
-            } else {
-              Navigator.pushReplacementNamed(context, '/dashboard');
             }
           } else if (state is AuthFailure) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.error)),
-            );
+            try {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.error),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            } catch (e) {
+              print('Error showing snackbar: $e');
+            }
           }
         },
         builder: (context, state) {
@@ -147,7 +160,10 @@ class _LoginPageState extends State<LoginPage> {
                             : () {
                                 if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('Please fill in all fields')),
+                                    SnackBar(
+                                      content: Text('Mohon isi semua field'),
+                                      backgroundColor: Colors.red,
+                                    ),
                                   );
                                   return;
                                 }

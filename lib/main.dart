@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'blocs/auth/auth_bloc.dart';
-import 'data/repositories/auth_repository.dart';
+import 'data/services/auth_service.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login.dart';
 import 'screens/admin_dashboard.dart';
@@ -12,7 +12,7 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
-  final authRepository = AuthRepository();
+  final AuthService authService = AuthService();
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +20,7 @@ class MyApp extends StatelessWidget {
       providers: [
         BlocProvider(
           create: (context) => AuthBloc(
-            authRepository: authRepository,
+            authService: authService,
           ),
         ),
         // Tambahkan BLoC provider lainnya di sini

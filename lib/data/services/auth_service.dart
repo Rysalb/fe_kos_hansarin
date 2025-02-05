@@ -4,12 +4,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/auth_response.dart';
 import '../../core/constants/api_constants.dart';
 import 'dart:io';
+import 'package:intl/intl.dart';
+
 
 class AuthService {
-  Future<AuthResponse> login(String email, String password) async {
+  static const String _tokenKey = 'auth_token';
+  static const String _userRoleKey = 'user_role';
+
+  Future<Map<String, dynamic>> login(String email, String password) async {
     try {
-      print('Attempting to login with URL: ${ApiConstants.baseUrl}/auth/login');
-      
       final response = await http.post(
         Uri.parse('${ApiConstants.baseUrl}/login'),
         headers: {
@@ -22,15 +25,36 @@ class AuthService {
         }),
       );
 
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
+      print('Login response status: ${response.statusCode}'); // Debugging
+      print('Login response body: ${response.body}'); // Debugging
 
-      return AuthResponse.fromJson(jsonDecode(response.body));
-      
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        if (data['token'] != null) {
+          // Simpan token
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('token', data['token']);
+          await prefs.setString('user_role', data['user']['role']);
+          
+          print('Token stored: ${data['token']}'); // Debugging
+          print('Role stored: ${data['user']['role']}'); // Debugging
+        }
+        return data;
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['message'] ?? 'Login gagal');
+      }
     } catch (e) {
-      print('Login error: $e');
-      throw Exception('Failed to connect to server: $e');
+      print('Login error: $e'); // Debugging
+      throw Exception('Error: $e');
     }
+  }
+
+  Future<bool> isAdmin() async {
+    final prefs = await SharedPreferences.getInstance();
+    final role = prefs.getString('user_role');
+    print('Retrieved role: $role'); // Debugging
+    return role == 'admin';
   }
 
   Future<AuthResponse> register({
@@ -83,7 +107,7 @@ class AuthService {
 
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
+    final token = prefs.getString(_tokenKey);
 
     if (token != null) {
       try {
@@ -95,7 +119,7 @@ class AuthService {
           },
         );
       } finally {
-        await prefs.remove('token');
+        await prefs.remove(_tokenKey);
       }
     }
   }
@@ -116,6 +140,80 @@ class AuthService {
         }
       }
       throw Exception('Gagal memuat data kamar');
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
+
+  Future<String?> getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    print('Retrieved token: $token'); // Debugging
+    return token;
+  }
+
+  Future<List<Map<String, dynamic>>> getUsersByRole(String role) async {
+    try {
+      final token = await getToken();
+      if (token == null) throw Exception('Token tidak ditemukan');
+
+      final response = await http.get(
+        Uri.parse('${ApiConstants.baseUrl}/users/role/$role'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = json.decode(response.body);
+        if (responseData['data'] != null) {
+          final List<Map<String, dynamic>> users = List<Map<String, dynamic>>.from(responseData['data']);
+          // Filter hanya user dengan status verifikasi pending
+          return users.where((user) => 
+            user['status_verifikasi'] == 'pending' || 
+            user['status_verifikasi'] == null
+          ).toList();
+        }
+        return [];
+      } else {
+        throw Exception('Failed to load users');
+      }
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
+
+  Future<void> verifikasiUser(
+    int userId,
+    String status,
+    DateTime? tanggalMasuk,
+    int? durasiSewa,
+  ) async {
+    try {
+      final token = await getToken();
+      if (token == null) throw Exception('Token tidak ditemukan');
+
+      final response = await http.post(
+        Uri.parse('${ApiConstants.baseUrl}/verifikasi-user/$userId'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'status': status,
+          if (tanggalMasuk != null)
+            'tanggal_masuk': DateFormat('yyyy-MM-dd').format(tanggalMasuk),
+          if (durasiSewa != null) 'durasi_sewa': durasiSewa,
+        }),
+      );
+
+      if (response.statusCode != 200) {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['message'] ?? 'Gagal memverifikasi user');
+      }
     } catch (e) {
       throw Exception('Error: $e');
     }

@@ -3,6 +3,7 @@ import 'package:proyekkos/screens/bottom_navbar/account_screen.dart';
 import 'package:proyekkos/screens/bottom_navbar/contact_screen.dart';
 import 'package:proyekkos/screens/bottom_navbar/history_screen.dart';
 import 'package:proyekkos/screens/kelola_kamar.dart';
+import 'package:proyekkos/screens/kelola_penyewa.dart';
 import 'package:proyekkos/widgets/custom_bottom_navbar.dart';
 
 
@@ -149,8 +150,13 @@ class AdminDashboardContent extends StatelessWidget {
                     ),
                     _buildMenuCard(
                       imagePath: 'assets/images/dashboard_icon/identitas_penyewa.png',
-                      label: 'Kelola Identitas\nPenyewa', 
-                      onTap: () {},
+                      label: 'Kelola Identitas\nPenyewa',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => KelolaPenyewaPage()),
+                        );
+                      },
                     ),
                     _buildMenuCard(
                       imagePath: 'assets/images/dashboard_icon/pembukuan.png',
