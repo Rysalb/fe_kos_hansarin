@@ -57,7 +57,11 @@ class _KelolaPenyewaPageState extends State<KelolaPenyewaPage> {
                 MaterialPageRoute(
                   builder: (context) => VerifikasiPenyewaScreen(),
                 ),
-              );
+              ).then((result) {
+                if(result == true){
+                  _fetchUnitData();
+                }
+              });
             },
           ),
         ],
@@ -112,7 +116,7 @@ class _KelolaPenyewaPageState extends State<KelolaPenyewaPage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text('Nama: ${penyewa['user']['name']}'),
-                                Text('Sisa: ${_calculateSisaHari(penyewa['tanggal_keluar'])} hari'),
+                                Text('Sisa: ${_calculateSisaHari(penyewa['tanggal_keluar'], penyewa['durasi_sewa'])} hari'),
                                 Text('Status: ${penyewa['status_penyewa']}'),
                               ],
                             ),
@@ -142,11 +146,12 @@ class _KelolaPenyewaPageState extends State<KelolaPenyewaPage> {
     );
   }
 
-  String _calculateSisaHari(String tanggalKeluar) {
+  String _calculateSisaHari(String tanggalKeluar, int durasiSewa) {
     final keluar = DateTime.parse(tanggalKeluar);
     final sekarang = DateTime.now();
     final selisih = keluar.difference(sekarang).inDays;
-    return selisih.toString();
+    // Menghitung sisa hari berdasarkan durasi sewa
+    return (selisih < 0) ? 'Sewa telah berakhir' : selisih.toString();
   }
 }
 

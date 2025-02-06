@@ -134,18 +134,24 @@ class _TambahKamarPageState extends State<TambahKamarPage> {
                 SizedBox(height: 8),
                 _buildTextField(
                   controller: _hargaSewa1Controller,
-                  label: 'Harga Sewa 3 Bulan',
+                  label: 'Harga Sewa 2 Bulan',
                   keyboardType: TextInputType.number,
                 ),
                 SizedBox(height: 8),
                 _buildTextField(
                   controller: _hargaSewa2Controller,
-                  label: 'Harga Sewa 6 Bulan',
+                  label: 'Harga Sewa 3 Bulan',
                   keyboardType: TextInputType.number,
                 ),
                 SizedBox(height: 8),
                 _buildTextField(
                   controller: _hargaSewa3Controller,
+                  label: 'Harga Sewa 6 Bulan',
+                  keyboardType: TextInputType.number,
+                ),
+                 SizedBox(height: 8),
+                _buildTextField(
+                  controller: _hargaSewa4Controller,
                   label: 'Harga Sewa 1 Tahun',
                   keyboardType: TextInputType.number,
                 ),
