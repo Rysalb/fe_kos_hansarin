@@ -111,7 +111,7 @@ class PenyewaService {
     }
   }
 
-  Future<void> createPenyewa({
+  Future<Map<String, dynamic>> createPenyewa({
     required String name,
     required String email,
     required String password,
@@ -170,6 +170,8 @@ class PenyewaService {
         Map<String, dynamic> errorData = json.decode(response.body);
         throw Exception(errorData['message'] ?? 'Gagal menambahkan penyewa');
       }
+
+      return json.decode(response.body); // Return response data
     } catch (e) {
       print('Error in createPenyewa: $e'); // Debug
       throw Exception('Error creating penyewa: $e');

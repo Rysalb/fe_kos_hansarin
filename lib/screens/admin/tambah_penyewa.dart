@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/services.dart';
+import 'package:proyekkos/data/services/pemasukan_pengeluaran_service.dart';
 
 class TambahPenyewaPage extends StatefulWidget {
   final String nomorKamar;
@@ -163,8 +164,11 @@ class _TambahPenyewaPageState extends State<TambahPenyewaPage> {
     setState(() => _isLoading = true);
 
     try {
+      // Parse tanggal masuk ke format yang sesuai
+      final DateTime parsedDate = DateFormat('yyyy-MM-dd').parse(_tanggalMasukController.text);
+      
       final PenyewaService _penyewaService = PenyewaService();
-      await _penyewaService.createPenyewa(
+      final response = await _penyewaService.createPenyewa(
         name: _namaController.text,
         email: _emailController.text,
         password: _passwordController.text,
@@ -173,10 +177,23 @@ class _TambahPenyewaPageState extends State<TambahPenyewaPage> {
         fotoKtp: _fotoKtpFile!,
         alamatAsal: _asalController.text,
         nomorWa: _noHPController.text,
-        tanggalMasuk: _tanggalMasukController.text,
+        tanggalMasuk: DateFormat('yyyy-MM-dd').format(parsedDate),
         durasiSewa: selectedDurasi,
-        hargaSewa: selectedHarga,
+        hargaSewa: selectedHarga
       );
+
+      // Jika berhasil menambahkan penyewa, catat pemasukan
+      if (response != null) {
+        final PemasukanPengeluaranService _pemasukanService = PemasukanPengeluaranService();
+        await _pemasukanService.create(
+          jenisTransaksi: 'pemasukan',
+          kategori: 'Pembayaran Sewa',
+          tanggal: parsedDate,
+          jumlah: selectedHarga,
+          keterangan: 'Pembayaran sewa kamar ${widget.nomorKamar} - ${_namaController.text} (${selectedDurasi} bulan)',
+          idPenyewa: response['data']['id_penyewa'],
+        );
+      }
 
       Navigator.pop(context, true);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -186,6 +203,7 @@ class _TambahPenyewaPageState extends State<TambahPenyewaPage> {
         ),
       );
     } catch (e) {
+      print('Error: $e'); // Untuk debugging
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Gagal menambahkan penyewa: $e'),
