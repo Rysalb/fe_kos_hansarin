@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:proyekkos/data/services/penyewa_service.dart';
 import 'package:intl/intl.dart';
 import 'package:proyekkos/screens/admin/verifikasi_penyewa.dart';
+import 'package:proyekkos/screens/admin/detail_penyewa.dart';
 
 class KelolaPenyewaPage extends StatefulWidget {
   @override
@@ -152,124 +153,5 @@ class _KelolaPenyewaPageState extends State<KelolaPenyewaPage> {
     final selisih = keluar.difference(sekarang).inDays;
     // Menghitung sisa hari berdasarkan durasi sewa
     return (selisih < 0) ? 'Sewa telah berakhir' : selisih.toString();
-  }
-}
-
-class DetailPenyewaPage extends StatefulWidget {
-  final int idPenyewa;
-
-  DetailPenyewaPage({required this.idPenyewa});
-
-  @override
-  _DetailPenyewaPageState createState() => _DetailPenyewaPageState();
-}
-
-class _DetailPenyewaPageState extends State<DetailPenyewaPage> {
-  final PenyewaService _penyewaService = PenyewaService();
-  Map<String, dynamic>? _penyewaDetail;
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchPenyewaDetail();
-  }
-
-  Future<void> _fetchPenyewaDetail() async {
-    try {
-      final detail = await _penyewaService.getPenyewaById(widget.idPenyewa);
-      setState(() {
-        _penyewaDetail = detail;
-        _isLoading = false;
-      });
-    } catch (e) {
-      print('Error fetching penyewa detail: $e');
-      setState(() => _isLoading = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Color(0xFFFFF8E7),
-      appBar: AppBar(
-        title: Text('Detail Penyewa', style: TextStyle(color: Colors.black)),
-        backgroundColor: Color(0xFFE7B789),
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: _isLoading
-          ? Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Detail penyewa akan ditampilkan di sini
-                  _buildDetailCard(),
-                ],
-              ),
-            ),
-    );
-  }
-
-  Widget _buildDetailCard() {
-    if (_penyewaDetail == null) return SizedBox();
-
-    return Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Informasi Penyewa',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: 16),
-            _buildInfoRow('Nama', _penyewaDetail!['user']['name']),
-            _buildInfoRow('NIK', _penyewaDetail!['nik']),
-            _buildInfoRow('Alamat Asal', _penyewaDetail!['alamat_asal']),
-            _buildInfoRow('Nomor WA', _penyewaDetail!['nomor_wa']),
-            _buildInfoRow('Tanggal Masuk', DateFormat('dd MMMM yyyy').format(DateTime.parse(_penyewaDetail!['tanggal_masuk']))),
-            _buildInfoRow('Tanggal Keluar', DateFormat('dd MMMM yyyy').format(DateTime.parse(_penyewaDetail!['tanggal_keluar']))),
-            _buildInfoRow('Status', _penyewaDetail!['status_penyewa']),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              label,
-              style: TextStyle(
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          Text(': '),
-          Expanded(
-            child: Text(value),
-          ),
-        ],
-      ),
-    );
   }
 } 

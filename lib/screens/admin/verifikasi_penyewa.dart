@@ -186,11 +186,12 @@ class _VerifikasiPenyewaScreenState extends State<VerifikasiPenyewaScreen> {
 
                   // Catat pemasukan setelah verifikasi berhasil
                   await _pemasukanService.create(
-                    'pemasukan',
-                    'Pembayaran Sewa',
-                    selectedDate,
-                    selectedHarga,
-                    'Pembayaran sewa kamar ${user['penyewa']?['unit_kamar']?['nomor_kamar']} - ${user['name']}',
+                    jenisTransaksi: 'pemasukan',
+                    kategori: 'Pembayaran Sewa',
+                    tanggal: selectedDate,
+                    jumlah: selectedHarga,
+                    keterangan: 'Pembayaran sewa kamar ${user['penyewa']?['unit_kamar']?['nomor_kamar']} - ${user['name']}',
+                    idPenyewa: user['penyewa']['id_penyewa'],
                   );
 
                   Navigator.pop(context);

@@ -1,15 +1,17 @@
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'package:proyekkos/core/constants/api_constants.dart';
+import 'dart:convert';
 
 class PemasukanPengeluaranService {
-  Future<void> create(
-    String jenisTransaksi,
-    String kategori,
-    DateTime tanggal,
-    double jumlah,
-    String keterangan,
-  ) async {
+  Future<void> create({
+    required String jenisTransaksi,
+    required String kategori,
+    required DateTime tanggal,
+    required double jumlah,
+    required String keterangan,
+    required int idPenyewa,
+  }) async {
     try {
       final response = await http.post(
         Uri.parse('${ApiConstants.baseUrl}/pemasukan-pengeluaran/create'),
@@ -19,11 +21,30 @@ class PemasukanPengeluaranService {
           'tanggal': DateFormat('yyyy-MM-dd').format(tanggal),
           'jumlah': jumlah.toString(),
           'keterangan': keterangan,
+          'id_penyewa': idPenyewa.toString(),
         },
       );
 
       if (response.statusCode != 201) {
         throw Exception('Gagal menambah transaksi');
+      }
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getRiwayatTransaksiPenyewa(int idPenyewa) async {
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConstants.baseUrl}/pemasukan-pengeluaran/penyewa/$idPenyewa'),
+        headers: {'Accept': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return List<Map<String, dynamic>>.from(data['data']);
+      } else {
+        throw Exception('Gagal memuat riwayat transaksi');
       }
     } catch (e) {
       throw Exception('Error: $e');
