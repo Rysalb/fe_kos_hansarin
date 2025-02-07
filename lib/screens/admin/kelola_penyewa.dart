@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:proyekkos/data/services/penyewa_service.dart';
-import 'package:intl/intl.dart';
 import 'package:proyekkos/screens/admin/verifikasi_penyewa.dart';
 import 'package:proyekkos/screens/admin/detail_penyewa.dart';
+import 'package:proyekkos/screens/admin/tambah_penyewa.dart';
 
 class KelolaPenyewaPage extends StatefulWidget {
   @override
@@ -100,7 +100,19 @@ class _KelolaPenyewaPageState extends State<KelolaPenyewaPage> {
                           ? Center(
                               child: ElevatedButton(
                                 onPressed: () {
-                                  // Navigasi ke halaman tambah penyewa
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => TambahPenyewaPage(
+                                        nomorKamar: unit['nomor_kamar'],
+                                        idUnit: unit['id_unit'].toString(),
+                                      ),
+                                    ),
+                                  ).then((value) {
+                                    if (value == true) {
+                                      _fetchUnitData(); // Refresh data setelah menambah penyewa
+                                    }
+                                  });
                                 },
                                 child: Text('Tambah Data'),
                                 style: ElevatedButton.styleFrom(

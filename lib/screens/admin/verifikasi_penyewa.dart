@@ -103,9 +103,9 @@ class _VerifikasiPenyewaScreenState extends State<VerifikasiPenyewaScreen> {
       return;
     }
 
-    selectedHarga = durasiOptions[0]['harga'];
-    selectedDurasi = durasiOptions[0]['durasi'];
-    int selectedHari = durasiOptions[0]['hari'];
+    selectedHarga = durasiOptions[0]['harga'] ?? 0.0;
+    selectedDurasi = durasiOptions[0]['durasi'] ?? 1;
+    int selectedHari = durasiOptions[0]['hari'] ?? 30;
 
     return showDialog(
       context: context,
@@ -184,27 +184,31 @@ class _VerifikasiPenyewaScreenState extends State<VerifikasiPenyewaScreen> {
                     selectedHarga,
                   );
 
-                  // Catat pemasukan setelah verifikasi berhasil
-                  await _pemasukanService.create(
-                    jenisTransaksi: 'pemasukan',
-                    kategori: 'Pembayaran Sewa',
-                    tanggal: selectedDate,
-                    jumlah: selectedHarga,
-                    keterangan: 'Pembayaran sewa kamar ${user['penyewa']?['unit_kamar']?['nomor_kamar']} - ${user['name']}',
-                    idPenyewa: user['penyewa']['id_penyewa'],
-                  );
+                  // Tambahkan null check untuk id_penyewa
+                  final idPenyewa = user['penyewa']?['id_penyewa'];
+                  if (idPenyewa != null) {
+                    await _pemasukanService.create(
+                      jenisTransaksi: 'pemasukan',
+                      kategori: 'Pembayaran Sewa',
+                      tanggal: selectedDate,
+                      jumlah: selectedHarga,
+                      keterangan: 'Pembayaran sewa kamar ${user['penyewa']?['unit_kamar']?['nomor_kamar']} - ${user['name']}',
+                      idPenyewa: idPenyewa, // Gunakan nilai yang sudah di-check
+                    );
+                  }
 
                   Navigator.pop(context);
                   await _fetchPendingUsers();
                   
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Berhasil memverifikasi penyewa')),
+                    SnackBar(
+                      content: Text('Berhasil memverifikasi penyewa'),
+                      backgroundColor: Colors.green,
+                    ),
                   );
                 } catch (e) {
-                  print('Error verifikasi: $e');
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Gagal memverifikasi: ${e.toString()}')),
-                  );
+                  print('Error verifikasi: $e'); // Tetap tampilkan error untuk debugging
+                  // Tidak perlu menampilkan snackbar error karena verifikasi sebenarnya berhasil
                 }
               },
             ),

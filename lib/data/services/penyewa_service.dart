@@ -110,4 +110,99 @@ class PenyewaService {
       throw Exception('Error: $e');
     }
   }
+
+  Future<void> createPenyewa({
+    required String name,
+    required String email,
+    required String password,
+    required String idUnit,
+    required String nik,
+    required File fotoKtp,
+    required String alamatAsal,
+    required String nomorWa,
+    required String tanggalMasuk,
+    required int durasiSewa,
+    required double hargaSewa,
+  }) async {
+    try {
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('${ApiConstants.baseUrl}/penyewa/create'),
+      );
+
+      // Add text fields
+      request.fields.addAll({
+        'name': name,
+        'email': email,
+        'password': password,
+        'id_unit': idUnit,
+        'nik': nik,
+        'alamat_asal': alamatAsal,
+        'nomor_wa': nomorWa,
+        'tanggal_masuk': tanggalMasuk,
+        'durasi_sewa': durasiSewa.toString(),
+        'harga_sewa': hargaSewa.toString(),
+        'status_verifikasi': 'disetujui',
+      });
+
+      // Add KTP file
+      var ktpStream = http.ByteStream(fotoKtp.openRead());
+      var length = await fotoKtp.length();
+      var multipartFile = http.MultipartFile(
+        'foto_ktp',
+        ktpStream,
+        length,
+        filename: 'foto_ktp.jpg',
+        contentType: MediaType('image', 'jpeg'),
+      );
+      request.files.add(multipartFile);
+
+      print('Sending request to: ${request.url}'); // Debug
+      print('Request fields: ${request.fields}'); // Debug
+
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+
+      print('Response status: ${response.statusCode}'); // Debug
+      print('Response body: ${response.body}'); // Debug
+
+      if (response.statusCode != 200) {
+        Map<String, dynamic> errorData = json.decode(response.body);
+        throw Exception(errorData['message'] ?? 'Gagal menambahkan penyewa');
+      }
+    } catch (e) {
+      print('Error in createPenyewa: $e'); // Debug
+      throw Exception('Error creating penyewa: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> getKamarDetail(String idUnit) async {
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConstants.baseUrl}/unit-kamar/detail/$idUnit'),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      print('Response status: ${response.statusCode}'); // Debug
+      print('Response body: ${response.body}'); // Debug
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = json.decode(response.body);
+        if (responseData['data'] != null) {
+          return responseData['data'];
+        } else {
+          throw Exception('Data kamar tidak ditemukan');
+        }
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['message'] ?? 'Failed to load kamar detail');
+      }
+    } catch (e) {
+      print('Error getting kamar detail: $e'); // Debug
+      throw Exception('Error getting kamar detail: $e');
+    }
+  }
 } 
