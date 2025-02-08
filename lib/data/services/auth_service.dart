@@ -228,8 +228,10 @@ class AuthService {
       final token = await getToken();
       if (token == null) throw Exception('Token tidak ditemukan');
 
+      print('Fetching profile with token: $token'); // Debug print
+
       final response = await http.get(
-        Uri.parse('${ApiConstants.baseUrl}/user/profile'),
+        Uri.parse('${ApiConstants.baseUrl}/profile'), // Update URL sesuai route baru
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
@@ -237,9 +239,15 @@ class AuthService {
         },
       );
 
+      print('Profile response status: ${response.statusCode}'); // Debug print
+      print('Profile response body: ${response.body}'); // Debug print
+
       if (response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(response.body);
-        return data['data'];
+        final Map<String, dynamic> responseData = json.decode(response.body);
+        if (responseData['data'] != null) {
+          return responseData['data'];
+        }
+        throw Exception('Data profil tidak ditemukan');
       } else {
         final errorData = json.decode(response.body);
         throw Exception(errorData['message'] ?? 'Gagal memuat profil');

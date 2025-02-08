@@ -4,20 +4,19 @@ import 'package:shimmer/shimmer.dart';
 class DashboardSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return SingleChildScrollView(
       padding: EdgeInsets.all(16.0),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildCardSkeleton(),
-          SizedBox(height: 10),
-          Expanded(
-            child: GridView.count(
-              crossAxisCount: 3,
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 16,
-              children: List.generate(9, (index) => _buildMenuCardSkeleton()),
-            ),
+          SizedBox(height: 24),
+          GridView.count(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            crossAxisCount: 2,
+            mainAxisSpacing: 16,
+            crossAxisSpacing: 16,
+            children: List.generate(6, (index) => _buildMenuCardSkeleton()),
           ),
         ],
       ),
@@ -26,24 +25,16 @@ class DashboardSkeleton extends StatelessWidget {
 
   Widget _buildCardSkeleton() {
     return Card(
-      child: Container(
-        padding: EdgeInsets.all(16),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(16.0),
         child: Column(
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildShimmerBox(width: 100, height: 20),
-                _buildShimmerBox(width: 100, height: 20),
-              ],
-            ),
-            SizedBox(height: 16),
-            _buildShimmerBox(width: double.infinity, height: 20),
+            _buildShimmerRow(),
             SizedBox(height: 8),
-            ...List.generate(4, (index) => Padding(
-              padding: EdgeInsets.only(bottom: 8),
-              child: _buildShimmerBox(width: double.infinity, height: 40),
-            )),
+            _buildShimmerRow(),
           ],
         ),
       ),
@@ -52,44 +43,75 @@ class DashboardSkeleton extends StatelessWidget {
 
   Widget _buildMenuCardSkeleton() {
     return Card(
-      child: Shimmer.fromColors(
-        baseColor: Colors.grey[300]!,
-        highlightColor: Colors.grey[100]!,
-        child: Container(
-          padding: EdgeInsets.all(12),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                color: Colors.white,
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Shimmer.fromColors(
+              baseColor: Colors.grey[300]!,
+              highlightColor: Colors.grey[100]!,
+              child: Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
-              SizedBox(height: 8),
-              Container(
-                width: 60,
-                height: 10,
-                color: Colors.white,
+            ),
+            SizedBox(height: 12),
+            Shimmer.fromColors(
+              baseColor: Colors.grey[300]!,
+              highlightColor: Colors.grey[100]!,
+              child: Container(
+                height: 12,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(4),
+                ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildShimmerBox({required double width, required double height}) {
-    return Shimmer.fromColors(
-      baseColor: Colors.grey[300]!,
-      highlightColor: Colors.grey[100]!,
-      child: Container(
-        width: width,
-        height: height,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
+  Widget _buildShimmerRow() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Shimmer.fromColors(
+          baseColor: Colors.grey[300]!,
+          highlightColor: Colors.grey[100]!,
+          child: Container(
+            height: 16,
+            width: 120,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
         ),
-      ),
+        Shimmer.fromColors(
+          baseColor: Colors.grey[300]!,
+          highlightColor: Colors.grey[100]!,
+          child: Container(
+            height: 16,
+            width: 100,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+        ),
+      ],
     );
   }
 } 

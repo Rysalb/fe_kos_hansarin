@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:proyekkos/data/services/penyewa_service.dart';
-import 'package:proyekkos/screens/admin/verifikasi_penyewa.dart';
-import 'package:proyekkos/screens/admin/detail_penyewa.dart';
-import 'package:proyekkos/screens/admin/tambah_penyewa.dart';
+import 'package:proyekkos/screens/admin/kelola_penyewa/verifikasi_penyewa.dart';
+import 'package:proyekkos/screens/admin/kelola_penyewa/detail_penyewa.dart';
+import 'package:proyekkos/screens/admin/kelola_penyewa/tambah_penyewa.dart';
 
 class KelolaPenyewaPage extends StatefulWidget {
   @override

@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:proyekkos/screens/admin/bottom_navbar/account_screen.dart';
 import 'package:proyekkos/screens/admin/bottom_navbar/contact_screen.dart';
 import 'package:proyekkos/screens/admin/bottom_navbar/history_screen.dart';
-import 'package:proyekkos/screens/admin/kelola_kamar.dart';
-import 'package:proyekkos/screens/admin/kelola_penyewa.dart';
-import 'package:proyekkos/widgets/custom_bottom_navbar.dart';
+import 'package:proyekkos/screens/admin/kelola_kamar/kelola_kamar.dart';
+import 'package:proyekkos/screens/admin/kelola_penyewa/kelola_penyewa.dart';
+import 'package:proyekkos/widgets/custom_bottom_navbarAdmin.dart';
 import 'package:proyekkos/data/services/auth_service.dart';
 import 'package:proyekkos/data/services/kamar_service.dart';
-import 'package:proyekkos/widgets/dashboard_skeleton.dart';
+import 'package:proyekkos/widgets/dashboardAdmin_skeleton.dart';
 import 'package:intl/intl.dart';
 
 class AdminDashboardPage extends StatefulWidget {

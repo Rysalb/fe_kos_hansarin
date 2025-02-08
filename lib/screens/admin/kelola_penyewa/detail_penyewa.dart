@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:proyekkos/data/services/penyewa_service.dart';
 import 'package:proyekkos/data/services/pemasukan_pengeluaran_service.dart';
 import 'package:intl/intl.dart';
-import 'package:proyekkos/screens/admin/ubah_penyewa.dart';
-import 'package:proyekkos/screens/admin/pindah_kamar.dart';
+import 'package:proyekkos/screens/admin/kelola_penyewa/ubah_penyewa.dart';
+import 'package:proyekkos/screens/admin/kelola_kamar/pindah_kamar.dart';
 
 class DetailPenyewaPage extends StatefulWidget {
   final int idPenyewa;

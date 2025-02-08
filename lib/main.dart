@@ -4,7 +4,7 @@ import 'blocs/auth/auth_bloc.dart';
 import 'data/services/auth_service.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login.dart';
-import 'screens/admin_dashboard.dart';
+import 'screens/admin/admin_dashboard.dart';
 import 'screens/users/dashboard_page.dart';
 
 void main() {

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:proyekkos/widgets/custom_bottom_navbar.dart';
+import 'package:proyekkos/widgets/custom_bottom_navbarAdmin.dart';
 import 'package:proyekkos/data/services/kamar_service.dart';
-import 'package:proyekkos/screens/admin/tambah_kamar.dart';
+import 'package:proyekkos/screens/admin/kelola_kamar/tambah_kamar.dart';
 import 'package:proyekkos/screens/admin/bottom_navbar/account_screen.dart';
 import 'package:proyekkos/screens/admin/bottom_navbar/contact_screen.dart';
 import 'package:proyekkos/screens/admin/bottom_navbar/history_screen.dart';
-import 'package:proyekkos/screens/admin_dashboard.dart';
-import 'package:proyekkos/screens/admin/ubah_kamar.dart';
+import 'package:proyekkos/screens/admin/admin_dashboard.dart';
+import 'package:proyekkos/screens/admin/kelola_kamar/ubah_kamar.dart';
 import 'package:proyekkos/widgets/custom_info_dialog.dart';
 
 class KelolaKamarPage extends StatefulWidget {
