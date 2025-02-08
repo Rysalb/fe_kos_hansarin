@@ -22,6 +22,24 @@ class KamarService {
     }
   }
 
+    Future<List<dynamic>?> getAllKamarUser() async {
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConstants.baseUrl}/kamarall/user'),
+
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['data'];
+      }
+      return null;
+    } catch (e) {
+      print('Error in getAllKamar: $e');
+      return null;
+    }
+  }
+
   Future<bool> createKamar(Map<String, dynamic> kamarData) async {
     try {
       final response = await http.post(

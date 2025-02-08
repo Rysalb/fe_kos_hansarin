@@ -19,10 +19,11 @@ class _PenghuniKamarScreenState extends State<PenghuniKamarScreen> {
 
   Future<void> _loadKamarData() async {
     try {
-      final data = await _kamarService.getAllKamar();
+      final data = await _kamarService.getAllKamarUser();
       if (data != null) {
         setState(() {
           _kamarList = List<Map<String, dynamic>>.from(data);
+
           _isLoading = false;
         });
       }
