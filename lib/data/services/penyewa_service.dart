@@ -243,4 +243,19 @@ class PenyewaService {
       throw Exception('Error: $e');
     }
   }
+
+  Future<void> deletePenyewa(int idPenyewa) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('${ApiConstants.baseUrl}/penyewa/delete/$idPenyewa'),
+      );
+
+      if (response.statusCode != 200) {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['message'] ?? 'Gagal menghapus penyewa');
+      }
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
 } 

@@ -5,7 +5,10 @@ import 'package:proyekkos/screens/admin/bottom_navbar/history_screen.dart';
 import 'package:proyekkos/screens/admin/kelola_kamar.dart';
 import 'package:proyekkos/screens/admin/kelola_penyewa.dart';
 import 'package:proyekkos/widgets/custom_bottom_navbar.dart';
-
+import 'package:proyekkos/data/services/auth_service.dart';
+import 'package:proyekkos/data/services/kamar_service.dart';
+import 'package:proyekkos/widgets/dashboard_skeleton.dart';
+import 'package:intl/intl.dart';
 
 class AdminDashboardPage extends StatefulWidget {
   @override
@@ -14,13 +17,108 @@ class AdminDashboardPage extends StatefulWidget {
 
 class _AdminDashboardPageState extends State<AdminDashboardPage> {
   int _selectedIndex = 0;
+  final AuthService _authService = AuthService();
+  final KamarService _kamarService = KamarService();
+  Map<String, dynamic>? _adminProfile;
+  Map<String, dynamic>? _kamarStats;
+  List<Map<String, dynamic>> _expiringRooms = [];
+  bool _isLoading = true;
+  late List<Widget> _screens;
 
-  final List<Widget> _screens = [
-    AdminDashboardContent(),
-    HistoryScreen(),
-    ContactScreen(),
-    AccountScreen(),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _screens = [
+      AdminDashboardContent(
+        kamarStats: _kamarStats,
+        expiringRooms: _expiringRooms,
+        onRefresh: _loadData,
+      ),
+      HistoryScreen(),
+      ContactScreen(),
+      AccountScreen(),
+    ];
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    if (!mounted) return;
+    
+    try {
+      setState(() => _isLoading = true);
+
+      // Tangani setiap request secara terpisah
+      Map<String, dynamic>? profile;
+      Map<String, dynamic> stats = {'terisi': 0, 'kosong': 0};
+      List<Map<String, dynamic>> expiring = [];
+
+      try {
+        profile = await _authService.getUserProfile();
+      } catch (e) {
+        print('Error loading profile: $e');
+      }
+
+      try {
+        stats = await _kamarService.getKamarStats();
+        print('Loaded stats: $stats'); // Debug log
+      } catch (e) {
+        print('Error loading stats: $e');
+      }
+
+      try {
+        expiring = await _kamarService.getExpiringRooms();
+        print('Loaded expiring: $expiring'); // Debug log
+      } catch (e) {
+        print('Error loading expiring rooms: $e');
+      }
+
+      if (!mounted) return;
+
+      setState(() {
+        _adminProfile = profile;
+        _kamarStats = stats;
+        _expiringRooms = expiring;
+        _isLoading = false;
+        _screens = [
+          AdminDashboardContent(
+            key: ValueKey('dashboard_${DateTime.now().millisecondsSinceEpoch}'),
+            kamarStats: stats,
+            expiringRooms: expiring,
+            onRefresh: _loadData,
+          ),
+          HistoryScreen(),
+          ContactScreen(),
+          AccountScreen(),
+        ];
+      });
+    } catch (e) {
+      print('Error in _loadData: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _screens = [
+            AdminDashboardContent(
+              key: ValueKey('error_${DateTime.now().millisecondsSinceEpoch}'),
+              kamarStats: {'terisi': 0, 'kosong': 0},
+              expiringRooms: [],
+              onRefresh: _loadData,
+            ),
+            HistoryScreen(),
+            ContactScreen(),
+            AccountScreen(),
+          ];
+        });
+      }
+    }
+  }
+
+  String _getGreeting() {
+    var hour = DateTime.now().hour;
+    if (hour < 12) return 'Selamat Pagi';
+    if (hour < 15) return 'Selamat Siang';
+    if (hour < 19) return 'Selamat Sore';
+    return 'Selamat Malam';
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -52,7 +150,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                   radius: 20,
                 ),
                 SizedBox(width: 12),
-                Text('Selamat Pagi, Bu Umi !'),
+                Text('${_getGreeting()}, ${_adminProfile?['name'] ?? 'Admin'}!'),
               ],
             ),
             backgroundColor: Colors.transparent,
@@ -68,10 +166,12 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           ),
         ),
       ),
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _screens,
-      ),
+      body: _isLoading
+          ? DashboardSkeleton()
+          : IndexedStack(
+              index: _selectedIndex,
+              children: _screens,
+            ),
       bottomNavigationBar: CustomBottomNavBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
@@ -80,18 +180,48 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   }
 }
 
+class AdminDashboardContent extends StatefulWidget {
+  final Map<String, dynamic>? kamarStats;
+  final List<Map<String, dynamic>> expiringRooms;
+  final VoidCallback onRefresh;
 
+  const AdminDashboardContent({
+    Key? key,
+    this.kamarStats,
+    this.expiringRooms = const [],
+    required this.onRefresh,
+  }) : super(key: key);
 
+  @override
+  State<AdminDashboardContent> createState() => _AdminDashboardContentState();
+}
 
-class AdminDashboardContent extends StatelessWidget {
- @override
+class _AdminDashboardContentState extends State<AdminDashboardContent> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Padding(
+    print('Building AdminDashboardContent with stats: ${widget.kamarStats}'); // Debug log
+    print('Building AdminDashboardContent with expiring: ${widget.expiringRooms}'); // Debug log
+    
+    return RefreshIndicator(
+      onRefresh: () async {
+         widget.onRefresh();
+      },
+      child: SingleChildScrollView(
+        controller: _scrollController,
+        physics: AlwaysScrollableScrollPhysics(),
+        child: Padding(
           padding: EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Card Informasi Kamar
               Card(
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -99,7 +229,10 @@ class AdminDashboardContent extends StatelessWidget {
                 elevation: 4,
                 child: Container(
                   decoration: BoxDecoration(
-                    border: Border.all(color: const Color.fromARGB(31, 58, 57, 57), width: 2),
+                    border: Border.all(
+                      color: const Color.fromARGB(31, 58, 57, 57),
+                      width: 2,
+                    ),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Padding(
@@ -110,8 +243,22 @@ class AdminDashboardContent extends StatelessWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('Kamar Terisi : 9'),
-                            Text('Kamar Kosong : 1'),
+                            Text(
+                              'Kamar Terisi : ${widget.kamarStats?['terisi'] ?? 0}',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF4A2F1C),
+                              ),
+                            ),
+                            Text(
+                              'Kamar Kosong : ${widget.kamarStats?['kosong'] ?? 0}',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF4A2F1C),
+                              ),
+                            ),
                           ],
                         ),
                         SizedBox(height: 16),
@@ -122,18 +269,38 @@ class AdminDashboardContent extends StatelessWidget {
                           ),
                         ),
                         SizedBox(height: 8),
-                        _buildExpiryRow('Kamar 1', '29 September 2024'),
-                        _buildExpiryRow('Kamar 2', '29 September 2024'),
-                        _buildExpiryRow('Kamar 3', '29 September 2024'),
-                        _buildExpiryRow('Kamar 4', '29 September 2024'),
+                        if (widget.expiringRooms.isEmpty)
+                          Container(
+                            padding: EdgeInsets.symmetric(vertical: 16.0),
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: Color(0xFFFFF3E0),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              'Tidak ada kamar yang akan habis masa sewanya dalam waktu dekat',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontStyle: FontStyle.italic,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                          )
+                        else
+                          ...widget.expiringRooms.map((room) => _buildExpiryRow(
+                                room['nomor_kamar'],
+                                room['tanggal_keluar'],
+                              )).toList(),
                       ],
                     ),
                   ),
                 ),
               ),
-              SizedBox(height: 10),
-              // Grid Menu
-              Expanded(
+              SizedBox(height: 16),
+              Container(
+                constraints: BoxConstraints(
+                  minHeight: MediaQuery.of(context).size.height - 200, // Memastikan scroll bekerja
+                ),
                 child: GridView.count(
                   shrinkWrap: true,
                   physics: NeverScrollableScrollPhysics(),
@@ -145,7 +312,9 @@ class AdminDashboardContent extends StatelessWidget {
                       imagePath: 'assets/images/dashboard_icon/kelola_kamar.png',
                       label: 'Kelola\nKamar',
                       onTap: () {
-                        Navigator.of(context).push(MaterialPageRoute(builder: (context) => KelolaKamarPage()));
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (context) => KelolaKamarPage()),
+                        );
                       },
                     ),
                     _buildMenuCard(
@@ -188,13 +357,14 @@ class AdminDashboardContent extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
     );
-
   }
 
   Widget _buildExpiryRow(String kamar, String tanggal) {
     return Container(
-      padding: EdgeInsets.symmetric(vertical: 1, horizontal: 10),
+      padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
       margin: EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: Color(0xFFFFF3E0),
@@ -203,8 +373,19 @@ class AdminDashboardContent extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Expanded(child: Text(kamar)),
-          Expanded(child: Text('Berakhir pada tanggal : $tanggal', textAlign: TextAlign.end)),
+          Expanded(
+            child: Text(
+              kamar,
+              style: TextStyle(fontWeight: FontWeight.w500),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              'Berakhir pada tanggal : ${DateFormat('dd MMMM yyyy').format(DateTime.parse(tanggal))}',
+              textAlign: TextAlign.end,
+              style: TextStyle(fontSize: 13),
+            ),
+          ),
         ],
       ),
     );

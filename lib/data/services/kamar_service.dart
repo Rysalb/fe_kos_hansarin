@@ -1,6 +1,8 @@
 import 'package:http/http.dart' as http;
+import 'package:proyekkos/data/services/auth_service.dart';
 import 'dart:convert';
 import '../../core/constants/api_constants.dart';
+
 
 class KamarService {
   Future<List<dynamic>?> getAllKamar() async {
@@ -70,6 +72,62 @@ class KamarService {
     } catch (e) {
       print('Error in deleteKamar: $e');
       return false;
+    }
+  }
+
+  Future<Map<String, dynamic>> getKamarStats() async {
+    try {
+      final token = await AuthService().getToken();
+      print('Token for stats: $token'); // Debug log
+
+      final response = await http.get(
+        Uri.parse('${ApiConstants.baseUrl}/kamar/stats'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      print('Stats Response: ${response.statusCode} - ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return {
+          'terisi': data['data']['terisi'] ?? 0,
+          'kosong': data['data']['kosong'] ?? 0,
+        };
+      }
+      return {'terisi': 0, 'kosong': 0};
+    } catch (e) {
+      print('Error getting kamar stats: $e');
+      return {'terisi': 0, 'kosong': 0};
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getExpiringRooms() async {
+    try {
+      final token = await AuthService().getToken();
+      if (token == null) throw Exception('Token tidak ditemukan');
+
+      final response = await http.get(
+        Uri.parse('${ApiConstants.baseUrl}/kamar/expiring'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      print('Expiring Response: ${response.statusCode} - ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body)['data'];
+        return List<Map<String, dynamic>>.from(data);
+      }
+      throw Exception('Gagal memuat data kamar: ${response.statusCode}');
+    } catch (e) {
+      print('Error getting expiring rooms: $e');
+      throw Exception('Error: $e');
     }
   }
 } 

@@ -249,9 +249,7 @@ class _DetailPenyewaPageState extends State<DetailPenyewaPage> {
           ),
           SizedBox(height: 8),
           ElevatedButton(
-            onPressed: () {
-              // Implementasi untuk keluar kos
-            },
+            onPressed: () => _showKeluarKosConfirmation(),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
               minimumSize: Size(double.infinity, 45),
@@ -261,6 +259,74 @@ class _DetailPenyewaPageState extends State<DetailPenyewaPage> {
         ],
       ),
     );
+  }
+
+  Future<void> _showKeluarKosConfirmation() async {
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Konfirmasi'),
+          content: Text(
+            'Apakah Anda yakin ingin mengeluarkan penyewa "${_penyewaDetail!['user']['name']}" dari kos?'
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('Batal'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop(); // Tutup dialog
+                await _keluarKos();
+              },
+              child: Text('Ya', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _keluarKos() async {
+    try {
+      // Tampilkan loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return Center(child: CircularProgressIndicator());
+        },
+      );
+
+      await _penyewaService.deletePenyewa(widget.idPenyewa);
+
+      // Tutup loading
+      Navigator.of(context).pop();
+
+      // Tampilkan notifikasi sukses
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Penyewa berhasil dikeluarkan dari kos'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      // Kembali ke halaman sebelumnya
+      Navigator.of(context).pop(true); // true untuk trigger refresh di halaman sebelumnya
+
+    } catch (e) {
+      // Tutup loading
+      Navigator.of(context).pop();
+
+      // Tampilkan error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal mengeluarkan penyewa: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   String _calculateSisaHari(String tanggalKeluar) {

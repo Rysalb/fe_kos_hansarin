@@ -222,4 +222,31 @@ class AuthService {
       throw Exception('Error: $e');
     }
   }
+
+  Future<Map<String, dynamic>> getUserProfile() async {
+    try {
+      final token = await getToken();
+      if (token == null) throw Exception('Token tidak ditemukan');
+
+      final response = await http.get(
+        Uri.parse('${ApiConstants.baseUrl}/user/profile'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        return data['data'];
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['message'] ?? 'Gagal memuat profil');
+      }
+    } catch (e) {
+      print('Error getting user profile: $e');
+      throw Exception('Error: $e');
+    }
+  }
 }
