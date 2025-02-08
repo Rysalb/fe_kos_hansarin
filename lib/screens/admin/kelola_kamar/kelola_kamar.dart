@@ -175,93 +175,117 @@ class _KelolaKamarContentState extends State<KelolaKamarContent> {
   Widget build(BuildContext context) {
     return _isLoading
         ? Center(child: CircularProgressIndicator())
-        : ListView.builder(
-            padding: EdgeInsets.all(16.0),
-            itemCount: _kamarList.length,
-            itemBuilder: (context, index) {
-              final kamar = _kamarList[index];
-              final totalUnit = kamar['unit_kamar']?.length ?? 0;
-              final terisiUnit = kamar['unit_kamar']
-                      ?.where((unit) => unit['status'] == 'dihuni')
-                      .length ??
-                  0;
-
-              return Padding(
-                padding: EdgeInsets.only(bottom: 12.0),
-                child: Dismissible(
-                  key: Key(kamar['id_kamar'].toString()),
-                  direction: DismissDirection.endToStart,
-                  background: Container(
-                    alignment: Alignment.centerRight,
-                    padding: EdgeInsets.only(right: 20.0),
-                    color: Colors.red,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.delete, color: Colors.white),
-                        Text('Hapus', style: TextStyle(color: Colors.white)),
-                      ],
+        : _kamarList.isEmpty 
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Belum membuat data kamar',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                  ),
-                  confirmDismiss: (direction) async {
-                    return await showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return AlertDialog(
-                          title: Text('Konfirmasi'),
-                          content: Text('Yakin ingin menghapus kamar ini?'),
-                          actions: <Widget>[
-                            TextButton(
-                              onPressed: () => Navigator.of(context).pop(false),
-                              child: Text('Batal'),
-                            ),
-                            TextButton(
-                              onPressed: () => Navigator.of(context).pop(true),
-                              child: Text('Hapus'),
-                            ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Tekan tombol + untuk menambahkan',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[500],
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            : ListView.builder(
+                padding: EdgeInsets.all(16.0),
+                itemCount: _kamarList.length,
+                itemBuilder: (context, index) {
+                  final kamar = _kamarList[index];
+                  final totalUnit = kamar['unit_kamar']?.length ?? 0;
+                  final terisiUnit = kamar['unit_kamar']
+                          ?.where((unit) => unit['status'] == 'dihuni')
+                          .length ??
+                      0;
+
+                  return Padding(
+                    padding: EdgeInsets.only(bottom: 12.0),
+                    child: Dismissible(
+                      key: Key(kamar['id_kamar'].toString()),
+                      direction: DismissDirection.endToStart,
+                      background: Container(
+                        alignment: Alignment.centerRight,
+                        padding: EdgeInsets.only(right: 20.0),
+                        color: Colors.red,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.delete, color: Colors.white),
+                            Text('Hapus', style: TextStyle(color: Colors.white)),
                           ],
+                        ),
+                      ),
+                      confirmDismiss: (direction) async {
+                        return await showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: Text('Konfirmasi'),
+                              content: Text('Yakin ingin menghapus kamar ini?'),
+                              actions: <Widget>[
+                                TextButton(
+                                  onPressed: () => Navigator.of(context).pop(false),
+                                  child: Text('Batal'),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.of(context).pop(true),
+                                  child: Text('Hapus'),
+                                ),
+                              ],
+                            );
+                          },
                         );
                       },
-                    );
-                  },
-                  onDismissed: (direction) {
-                    _deleteKamar(kamar['id_kamar']);
-                  },
-                  child: GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => UbahKamarPage(kamar: kamar),
-                        ),
-                      ).then((_) => _fetchKamarData());
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Color(0xFFFFE5CC),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: ListTile(
-                        title: Text(
-                          kamar['tipe_kamar'] ?? '',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
+                      onDismissed: (direction) {
+                        _deleteKamar(kamar['id_kamar']);
+                      },
+                      child: GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => UbahKamarPage(kamar: kamar),
+                            ),
+                          ).then((_) => _fetchKamarData());
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Color(0xFFFFE5CC),
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                        ),
-                        trailing: Text(
-                          '$terisiUnit/$totalUnit',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
+                          child: ListTile(
+                            title: Text(
+                              kamar['tipe_kamar'] ?? '',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            trailing: Text(
+                              '$terisiUnit/$totalUnit',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ),
+                  );
+                },
               );
-            },
-          );
   }
 }

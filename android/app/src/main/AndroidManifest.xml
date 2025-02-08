@@ -45,37 +45,27 @@
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
+        </intent>
+        <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="https" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
             <data android:scheme="whatsapp" />
         </intent>
-        <!-- If your app checks for SMS support -->
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="sms" />
         </intent>
-        <!-- If your app checks for call support -->
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="tel" />
         </intent>
-        <!-- If your application checks for whatsapp support -->
-        <intent>
-            <action android:name="android.intent.action.VIEW" />
-            <data android:scheme="whatsapp" />
-        </intent>
-        <!-- Untuk WhatsApp -->
-        <package android:name="com.whatsapp" />
-        <!-- Untuk browser -->
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <category android:name="android.intent.category.BROWSABLE" />
             <data android:scheme="https" />
-        </intent>
-        <!-- Untuk WhatsApp URL -->
-        <intent>
-            <action android:name="android.intent.action.VIEW" />
-            
         </intent>
     </queries>
 </manifest>
