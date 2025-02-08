@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:proyekkos/screens/users/chat_pengelola.dart';
 import '../../data/services/auth_service.dart';
 import '../../widgets/dashboard_skeleton.dart';
 import '../../widgets/custom_bottom_navbarUser.dart';
@@ -121,7 +122,14 @@ class _DashboardPageState extends State<DashboardPage> {
                         _buildMenuCard(
                           imagePath: 'assets/images/dashboard_icon/wa.png',
                           label: 'Chat Pengelola\nKos',
-                          onTap: () {},
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ChatPengelola(),
+                              ),
+                            );
+                          },
                         ),
                         _buildMenuCard(
                           imagePath: 'assets/images/dashboard_icon/metode_pembayaran.png',
