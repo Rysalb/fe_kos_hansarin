@@ -257,4 +257,60 @@ class AuthService {
       throw Exception('Error: $e');
     }
   }
+
+  Future<Map<String, dynamic>> registerAdmin({
+  required String name,
+  required String email,
+  required String password,
+  required String nomorWa,
+  required String passwordConfirmation,
+}) async {
+  try {
+    final response = await http.post(
+      Uri.parse('${ApiConstants.baseUrl}/register-admin'),
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'name': name,
+        'email': email,
+        'password': password,
+        'nomor_wa': nomorWa,
+        'password_confirmation': passwordConfirmation,
+      }),
+    );
+
+    return json.decode(response.body);
+  } catch (e) {
+    throw Exception('Failed to register admin: $e');
+  }
+}
+
+  Future<List<Map<String, dynamic>>> getAdminList() async {
+    try {
+      final token = await getToken();
+      if (token == null) throw Exception('Token tidak ditemukan');
+
+      final response = await http.get(
+        Uri.parse('${ApiConstants.baseUrl}/admin-list'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['status'] == true && data['data'] != null) {
+          return List<Map<String, dynamic>>.from(data['data']);
+        }
+        throw Exception(data['message'] ?? 'Gagal mengambil data admin');
+      } else {
+        throw Exception('Gagal mengambil data admin');
+      }
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
 }

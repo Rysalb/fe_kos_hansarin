@@ -5,6 +5,7 @@ import '../../widgets/custom_bottom_navbarUser.dart';
 import 'bottom_navbar/history_screen.dart';
 import 'bottom_navbar/contact_screen.dart';
 import 'bottom_navbar/account_screen.dart';
+import 'penghuni_kamar_screen.dart';
 
 class DashboardPage extends StatefulWidget {
   @override
@@ -106,9 +107,16 @@ class _DashboardPageState extends State<DashboardPage> {
                       crossAxisSpacing: 16,
                       children: [
                         _buildMenuCard(
-                          imagePath: 'assets/images/dashboard_icon/identitas_penyewa.png',
+                          imagePath: 'assets/images/dashboard_icon/kelola_kamar.png',
                           label: 'Lihat Penghuni\nKamar Kos',
-                          onTap: () {},
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => PenghuniKamarScreen(),
+                              ),
+                            );
+                          },
                         ),
                         _buildMenuCard(
                           imagePath: 'assets/images/dashboard_icon/wa.png',

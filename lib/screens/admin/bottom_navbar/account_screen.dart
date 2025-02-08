@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:proyekkos/data/services/auth_service.dart';
+import 'package:proyekkos/screens/admin/add_admin_screen.dart';
 
 class AccountScreen extends StatelessWidget {
   final AuthService _authService = AuthService();
@@ -23,7 +24,12 @@ class AccountScreen extends StatelessWidget {
             icon: 'assets/images/admin.png',
             title: 'Buat Akun Tambahan Pengelola Kos',
             onTap: () {
-              // Navigasi ke halaman buat akun tambahan
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AddAdminScreen(),
+                ),
+              );
             },
           ),
           SizedBox(height: 12),
