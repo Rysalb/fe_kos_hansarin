@@ -133,14 +133,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         preferredSize: Size.fromHeight(50.0),
         child: Container(
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Color(0xFF99836D),
-                Color(0xFFFFF8E7)
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+            color: Color(0xFFE7B789),
           ),
           child: AppBar(
             title: Row(
@@ -150,11 +143,15 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                   radius: 20,
                 ),
                 SizedBox(width: 12),
-                Text('${_getGreeting()}, ${_adminProfile?['name'] ?? 'Admin'}!'),
+                Text(
+                  '${_getGreeting()}, ${_adminProfile?['name'] ?? 'Admin'}!',
+                  style: TextStyle(color: Colors.black),
+                ),
               ],
             ),
             backgroundColor: Colors.transparent,
             elevation: 0,
+            iconTheme: IconThemeData(color: Colors.black),
             actions: [
               IconButton(
                 icon: Icon(Icons.notifications),
@@ -175,6 +172,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       bottomNavigationBar: CustomBottomNavBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
+        backgroundColor: Color(0xFFE7B789),
       ),
     );
   }

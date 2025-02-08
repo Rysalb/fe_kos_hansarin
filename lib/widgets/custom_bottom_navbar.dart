@@ -3,25 +3,20 @@ import 'package:flutter/material.dart';
 class CustomBottomNavBar extends StatelessWidget {
   final int currentIndex;
   final Function(int) onTap;
+  final Color backgroundColor;
 
   const CustomBottomNavBar({
     Key? key,
     required this.currentIndex,
     required this.onTap,
+    this.backgroundColor = const Color(0xFFE7B789),
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Color(0xFF99836D),
-            Color(0xFFFFF8E7)
-          ],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
+        color: backgroundColor,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
