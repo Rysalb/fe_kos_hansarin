@@ -207,4 +207,40 @@ class PenyewaService {
       throw Exception('Error getting kamar detail: $e');
     }
   }
+
+  Future<List<dynamic>> getUnitTersedia(String idKamar) async {
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConstants.baseUrl}/penyewa/unit-tersedia/$idKamar'),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = json.decode(response.body);
+        return List<dynamic>.from(responseData['data']);
+      } else {
+        throw Exception('Gagal mendapatkan unit tersedia');
+      }
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
+
+  Future<void> pindahKamar(int idPenyewa, int idUnitBaru) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConstants.baseUrl}/penyewa/pindah-kamar'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'id_penyewa': idPenyewa,
+          'id_unit_baru': idUnitBaru,
+        }),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Gagal pindah kamar');
+      }
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
 } 

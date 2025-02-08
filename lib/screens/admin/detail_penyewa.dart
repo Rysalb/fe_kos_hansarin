@@ -3,6 +3,7 @@ import 'package:proyekkos/data/services/penyewa_service.dart';
 import 'package:proyekkos/data/services/pemasukan_pengeluaran_service.dart';
 import 'package:intl/intl.dart';
 import 'package:proyekkos/screens/admin/ubah_penyewa.dart';
+import 'package:proyekkos/screens/admin/pindah_kamar.dart';
 
 class DetailPenyewaPage extends StatefulWidget {
   final int idPenyewa;
@@ -218,33 +219,44 @@ class _DetailPenyewaPageState extends State<DetailPenyewaPage> {
             onPressed: () {
               // Implementasi untuk perpanjang sewa
             },
-            child: Text('Perpanjang Sewa'),
             style: ElevatedButton.styleFrom(
               backgroundColor: Color(0xFF6B4B3E),
               minimumSize: Size(double.infinity, 45),
             ),
+            child: Text('Perpanjang Sewa', style: TextStyle(color: Colors.white)),
           ),
           SizedBox(height: 8),
           ElevatedButton(
-            onPressed: () {
-              // Implementasi untuk pindah kamar
+            onPressed: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => PindahKamarPage(
+                    idPenyewa: widget.idPenyewa,
+                    currentKamar: _penyewaDetail!['unit_kamar']['nomor_kamar'],
+                  ),
+                ),
+              );
+              if (result == true) {
+                _fetchData(); // Refresh data setelah pindah kamar
+              }
             },
-            child: Text('Pindah Kamar'),
             style: ElevatedButton.styleFrom(
               backgroundColor: Color(0xFF9F8C82),
               minimumSize: Size(double.infinity, 45),
             ),
+            child: Text('Pindah Kamar', style: TextStyle(color: Colors.white)),
           ),
           SizedBox(height: 8),
           ElevatedButton(
             onPressed: () {
               // Implementasi untuk keluar kos
             },
-            child: Text('Keluar Kos'),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
               minimumSize: Size(double.infinity, 45),
             ),
+            child: Text('Keluar Kos', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
