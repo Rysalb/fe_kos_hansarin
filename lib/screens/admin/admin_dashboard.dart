@@ -5,6 +5,7 @@ import 'package:proyekkos/screens/admin/bottom_navbar/history_screen.dart';
 import 'package:proyekkos/screens/admin/kelola_kamar/kelola_kamar.dart';
 import 'package:proyekkos/screens/admin/kelola_penyewa/kelola_penyewa.dart';
 import 'package:proyekkos/screens/admin/nomor_penting/nomor_penting_screen.dart';
+import 'package:proyekkos/screens/admin/peraturan_kos/peraturan_kos_screen.dart';
 import 'package:proyekkos/widgets/custom_bottom_navbarAdmin.dart';
 import 'package:proyekkos/data/services/auth_service.dart';
 import 'package:proyekkos/data/services/kamar_service.dart';
@@ -118,8 +119,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     var hour = DateTime.now().hour;
     if (hour < 12) return 'Selamat Pagi';
     if (hour < 15) return 'Selamat Siang';
-    if (hour < 19) return 'Selamat Sore';
-    return 'Selamat Malam';
+    if (hour < 18) return 'Selamat Sore';
+    if (hour >= 18 || hour < 3) return 'Selamat Malam';
+    return 'Selamat Pagi'; // Default case, should not be reached
   }
 
   void _onItemTapped(int index) {
@@ -363,10 +365,14 @@ class _AdminDashboardContentState extends State<AdminDashboardContent> {
                     _buildMenuCard(
                       imagePath: 'assets/images/dashboard_icon/peraturan_kos.png',
                       label: 'Buat Peraturan\nKos',
-                      onTap: () {},
+                      onTap: () {Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => PeraturanKosScreen()),
+                        );},
                     ),
                   ],
                 ),
+
               ),
             ],
           ),

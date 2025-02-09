@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:proyekkos/widgets/custom_bottom_navbarAdmin.dart';
 import 'package:proyekkos/data/services/kamar_service.dart';
 import 'package:proyekkos/screens/admin/kelola_kamar/tambah_kamar.dart';
 import 'package:proyekkos/screens/admin/bottom_navbar/account_screen.dart';
@@ -114,10 +113,6 @@ class _KelolaKamarPageState extends State<KelolaKamarPage> {
           height: 100,
         ),
       ) : null,
-      bottomNavigationBar: CustomBottomNavBar(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-      ),
     );
   }
 }
