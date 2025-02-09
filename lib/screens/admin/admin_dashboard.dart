@@ -5,6 +5,7 @@ import 'package:proyekkos/screens/admin/bottom_navbar/history_screen.dart';
 import 'package:proyekkos/screens/admin/kelola_kamar/kelola_kamar.dart';
 import 'package:proyekkos/screens/admin/kelola_penyewa/kelola_penyewa.dart';
 import 'package:proyekkos/screens/admin/nomor_penting/nomor_penting_screen.dart';
+import 'package:proyekkos/screens/admin/pembukuan/pemasukan_pengeluaran_screen.dart';
 import 'package:proyekkos/screens/admin/peraturan_kos/peraturan_kos_screen.dart';
 import 'package:proyekkos/widgets/custom_bottom_navbarAdmin.dart';
 import 'package:proyekkos/data/services/auth_service.dart';
@@ -332,7 +333,13 @@ class _AdminDashboardContentState extends State<AdminDashboardContent> {
                     _buildMenuCard(
                       imagePath: 'assets/images/dashboard_icon/pembukuan.png',
                       label: 'Pembukuan\nKeuangan',
-                      onTap: () {},
+                      onTap: () {Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => PemasukanPengeluaranScreen(),
+                          ),
+
+                        );},
                     ),
                     _buildMenuCard(
                       imagePath: 'assets/images/dashboard_icon/verifikasi_pembayaran.png',

@@ -50,4 +50,77 @@ class PemasukanPengeluaranService {
       throw Exception('Error: $e');
     }
   }
+
+  Future<Map<String, dynamic>> getRekapBulanan(int bulan, int tahun) async {
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConstants.baseUrl}/pemasukan-pengeluaran/rekap-bulanan/$bulan/$tahun'),
+        headers: {'Accept': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['data'];
+      } else {
+        throw Exception('Gagal memuat rekap bulanan');
+      }
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getAllTransaksi() async {
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConstants.baseUrl}/pemasukan-pengeluaran/get/all'),
+        headers: {'Accept': 'application/json'},
+      );
+
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return List<Map<String, dynamic>>.from(data['data']);
+      } else {
+        throw Exception('Gagal memuat transaksi');
+      }
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> getTransaksiByDate(DateTime date) async {
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConstants.baseUrl}/pemasukan-pengeluaran/by-date/${DateFormat('yyyy-MM-dd').format(date)}'),
+        headers: {'Accept': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['data'];
+      } else {
+        throw Exception('Gagal memuat data transaksi');
+      }
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getTransaksiByJenis(String jenis) async {
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConstants.baseUrl}/pemasukan-pengeluaran/by-jenis/$jenis'),
+        headers: {'Accept': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return List<Map<String, dynamic>>.from(data['data']);
+      } else {
+        throw Exception('Gagal memuat data transaksi');
+      }
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
 } 
