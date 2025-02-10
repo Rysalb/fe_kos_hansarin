@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:proyekkos/data/services/pemasukan_pengeluaran_service.dart';
+import 'package:proyekkos/screens/admin/pembukuan/tambah_pemasukan_pengeluaran_screen.dart';
 
 class PemasukanPengeluaranScreen extends StatefulWidget {
   @override
@@ -252,7 +253,18 @@ class _PemasukanPengeluaranScreenState extends State<PemasukanPengeluaranScreen>
             ),
       floatingActionButton: GestureDetector(
         onTap: () {
-          // TODO: Navigate to add transaction screen
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => TambahPemasukanPengeluaranScreen(
+                isPemasukan: true, // Default ke pemasukan
+              ),
+            ),
+          ).then((value) {
+            if (value == true) {
+              _loadData(); // Refresh data setelah menambah
+            }
+          });
         },
         child: Image.asset(
           'assets/images/add_icon.png',
