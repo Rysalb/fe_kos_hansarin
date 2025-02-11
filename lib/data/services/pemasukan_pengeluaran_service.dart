@@ -138,4 +138,54 @@ class PemasukanPengeluaranService {
       throw Exception('Error: $e');
     }
   }
+
+  Future<Map<String, dynamic>> update({
+    required int id,
+    required String jenisTransaksi,
+    required String kategori,
+    required DateTime tanggal,
+    required double jumlah,
+    required String keterangan,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConstants.baseUrl}/pemasukan-pengeluaran/update/$id'),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'jenis_transaksi': jenisTransaksi,
+          'kategori': kategori,
+          'tanggal': DateFormat('yyyy-MM-dd').format(tanggal),
+          'jumlah': jumlah,
+          'keterangan': keterangan,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data;
+      } else {
+        throw Exception('Gagal memperbarui transaksi: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
+
+  Future<void> delete(int id) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('${ApiConstants.baseUrl}/pemasukan-pengeluaran/delete/$id'),
+        headers: {'Accept': 'application/json'},
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Gagal menghapus transaksi');
+      }
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
 } 

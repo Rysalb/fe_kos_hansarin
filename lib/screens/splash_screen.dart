@@ -36,7 +36,7 @@ class _SplashScreenState extends State<SplashScreen> {
             Padding(
               padding: EdgeInsets.only(bottom: 64.0),
               child: Text(
-                'Kelola Kos Menjadi Lebih Mudah',
+                'Selamat Datang di Aplikasi Kos Sidorame12',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 18,

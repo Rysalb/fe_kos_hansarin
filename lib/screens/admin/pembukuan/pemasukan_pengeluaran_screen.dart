@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:proyekkos/data/services/pemasukan_pengeluaran_service.dart';
 import 'package:proyekkos/screens/admin/pembukuan/tambah_pemasukan_pengeluaran_screen.dart';
+import 'package:proyekkos/screens/admin/pembukuan/edit_pemasukan_pengeluaran_screen.dart';
 
 class PemasukanPengeluaranScreen extends StatefulWidget {
   @override
@@ -398,33 +399,54 @@ class _PemasukanPengeluaranScreenState extends State<PemasukanPengeluaranScreen>
       itemBuilder: (context, index) {
         final transaksi = _transaksi[index];
         final isIncome = transaksi['jenis_transaksi'] == 'pemasukan';
-        // Konversi jumlah ke double
         final jumlah = double.parse(transaksi['jumlah'].toString());
         
-        return Card(
-          margin: EdgeInsets.only(bottom: 8),
-          child: ListTile(
-            leading: Image.asset(
-              isIncome ? 'assets/images/pemasukan.png' : 'assets/images/pengeluaran.png',
-              width: 50,
-              height: 50,
-            ),
-            title: Text(transaksi['kategori']),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(transaksi['keterangan'] ?? ''),
-                Text(
-                  DateFormat('dd MMM yyyy').format(DateTime.parse(transaksi['tanggal'])),
-                  style: TextStyle(fontSize: 12),
+        // Cek apakah transaksi berasal dari pembayaran sewa
+        final isFromPayment = transaksi['keterangan']?.toString().contains('[ID Penyewa:') ?? false;
+        
+        return GestureDetector(
+          onTap: () async {
+            // Hanya bisa edit jika bukan dari pembayaran sewa
+            if (!isFromPayment) {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => EditPemasukanPengeluaranScreen(
+                    transaksi: transaksi,
+                  ),
                 ),
-              ],
-            ),
-            trailing: Text(
-              currencyFormatter.format(jumlah),
-              style: TextStyle(
-                color: isIncome ? Colors.green : Colors.red,
-                fontWeight: FontWeight.bold,
+              );
+              
+              if (result != null && result == true) {
+                await _loadData();
+              }
+            }
+          },
+          child: Card(
+            margin: EdgeInsets.only(bottom: 8),
+            child: ListTile(
+              leading: Image.asset(
+                isIncome ? 'assets/images/pemasukan.png' : 'assets/images/pengeluaran.png',
+                width: 50,
+                height: 50,
+              ),
+              title: Text(transaksi['kategori']),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(transaksi['keterangan'] ?? ''),
+                  Text(
+                    DateFormat('dd MMM yyyy').format(DateTime.parse(transaksi['tanggal'])),
+                    style: TextStyle(fontSize: 12),
+                  ),
+                ],
+              ),
+              trailing: Text(
+                currencyFormatter.format(jumlah),
+                style: TextStyle(
+                  color: isIncome ? Colors.green : Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
