@@ -406,7 +406,6 @@ class _PemasukanPengeluaranScreenState extends State<PemasukanPengeluaranScreen>
         
         return GestureDetector(
           onTap: () async {
-            // Hanya bisa edit jika bukan dari pembayaran sewa
             if (!isFromPayment) {
               final result = await Navigator.push(
                 context,

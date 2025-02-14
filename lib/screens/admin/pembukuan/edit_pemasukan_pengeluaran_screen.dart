@@ -57,6 +57,9 @@ class _EditPemasukanPengeluaranScreenState extends State<EditPemasukanPengeluara
       text: currencyFormatter.format(jumlah),
     );
     _isPemasukan = widget.transaksi['jenis_transaksi'] == 'pemasukan';
+
+    // Log ID transaksi untuk debugging
+    print('ID Transaksi: ${widget.transaksi['id']}');
   }
 
   void _formatCurrency(String value) {
@@ -113,6 +116,14 @@ class _EditPemasukanPengeluaranScreenState extends State<EditPemasukanPengeluara
 
   Future<void> _deleteTransaksi() async {
     try {
+      // Pastikan ID transaksi tidak null
+      if (widget.transaksi['id'] == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('ID transaksi tidak valid')),
+        );
+        return;
+      }
+
       bool confirm = await showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -149,6 +160,14 @@ class _EditPemasukanPengeluaranScreenState extends State<EditPemasukanPengeluara
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
       try {
+        // Pastikan ID transaksi tidak null
+        if (widget.transaksi['id'] == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('ID transaksi tidak valid')),
+          );
+          return;
+        }
+
         String jumlahStr = _jumlahController.text.replaceAll('Rp ', '').replaceAll('.', '');
         double jumlah = double.parse(jumlahStr);
 
