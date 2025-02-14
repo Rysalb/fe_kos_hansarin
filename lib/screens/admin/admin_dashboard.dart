@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:proyekkos/screens/admin/bottom_navbar/account_screen.dart';
 import 'package:proyekkos/screens/admin/bottom_navbar/contact_screen.dart';
-import 'package:proyekkos/screens/admin/bottom_navbar/history_screen.dart';
+import 'package:proyekkos/screens/admin/bottom_navbar/katalog_makanan.dart';
 import 'package:proyekkos/screens/admin/kelola_kamar/kelola_kamar.dart';
 import 'package:proyekkos/screens/admin/kelola_penyewa/kelola_penyewa.dart';
 import 'package:proyekkos/screens/admin/nomor_penting/nomor_penting_screen.dart';
 import 'package:proyekkos/screens/admin/pembukuan/pemasukan_pengeluaran_screen.dart';
 import 'package:proyekkos/screens/admin/peraturan_kos/peraturan_kos_screen.dart';
+import 'package:proyekkos/screens/admin/verif_pembayaran/verifikasi_pembayaran_screen.dart';
 import 'package:proyekkos/widgets/custom_bottom_navbarAdmin.dart';
 import 'package:proyekkos/data/services/auth_service.dart';
 import 'package:proyekkos/data/services/kamar_service.dart';
@@ -344,7 +345,13 @@ class _AdminDashboardContentState extends State<AdminDashboardContent> {
                     _buildMenuCard(
                       imagePath: 'assets/images/dashboard_icon/verifikasi_pembayaran.png',
                       label: 'Verifikasi Laporan\nPembayaran',
-                      onTap: () {},
+                      onTap: () {Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => VerifikasiPembayaranScreen(),
+                          ),
+
+                        );},
                     ),
                     _buildMenuCard(
                       imagePath: 'assets/images/dashboard_icon/nomor_penting.png',
