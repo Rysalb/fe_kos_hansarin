@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:proyekkos/data/services/pemasukan_pengeluaran_service.dart';
 import 'package:proyekkos/screens/admin/pembukuan/tambah_pemasukan_pengeluaran_screen.dart';
 import 'package:proyekkos/screens/admin/pembukuan/edit_pemasukan_pengeluaran_screen.dart';
+import 'package:proyekkos/screens/admin/pembukuan/kwitansi_pembayaran_screen.dart';
 
 class PemasukanPengeluaranScreen extends StatefulWidget {
   @override
@@ -369,6 +370,7 @@ class _PemasukanPengeluaranScreenState extends State<PemasukanPengeluaranScreen>
         isExpanded: true,
         underline: SizedBox(),
         items: [
+          'Semua',
           'Hari Ini',
           'Minggu Ini',
           'Bulan Ini',
@@ -383,12 +385,49 @@ class _PemasukanPengeluaranScreenState extends State<PemasukanPengeluaranScreen>
           if (newValue != null) {
             setState(() {
               _selectedFilter = newValue;
-              // TODO: Implement filter logic
+              _filterData(newValue);
             });
           }
         },
       ),
     );
+  }
+
+  void _filterData(String filter) {
+    setState(() => _isLoading = true);
+    
+    try {
+      final now = DateTime.now();
+      final filteredData = _transaksi.where((item) {
+        final tanggal = DateTime.parse(item['tanggal']);
+        
+        switch(filter) {
+          case 'Hari Ini':
+            return tanggal.year == now.year && 
+                   tanggal.month == now.month && 
+                   tanggal.day == now.day;
+          case 'Minggu Ini':
+            final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+            final endOfWeek = startOfWeek.add(Duration(days: 6));
+            return tanggal.isAfter(startOfWeek.subtract(Duration(days: 1))) && 
+                   tanggal.isBefore(endOfWeek.add(Duration(days: 1)));
+          case 'Bulan Ini':
+            return tanggal.year == now.year && tanggal.month == now.month;
+          case 'Tahun Ini':
+            return tanggal.year == now.year;
+          default: // 'Semua'
+            return true;
+        }
+      }).toList();
+
+      setState(() {
+        _transaksi = filteredData;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error filtering data: $e');
+      setState(() => _isLoading = false);
+    }
   }
 
   Widget _buildTransaksiList() {
@@ -406,7 +445,16 @@ class _PemasukanPengeluaranScreenState extends State<PemasukanPengeluaranScreen>
         
         return GestureDetector(
           onTap: () async {
-            if (!isFromPayment) {
+            if (transaksi['jenis_transaksi'] == 'pemasukan') {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => KwitansiPembayaranScreen(
+                    transaksi: transaksi,
+                  ),
+                ),
+              );
+            } else {
               final result = await Navigator.push(
                 context,
                 MaterialPageRoute(

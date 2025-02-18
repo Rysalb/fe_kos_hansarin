@@ -32,9 +32,7 @@ class _ContactScreenState extends State<ContactScreen> {
         );
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal memuat data kontak')),
-      );
+      
     } finally {
       setState(() => _isLoading = false);
     }

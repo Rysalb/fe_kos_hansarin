@@ -39,7 +39,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         expiringRooms: _expiringRooms,
         onRefresh: _loadData,
       ),
-      HistoryScreen(),
+      KatalogMakananScreen(),
       ContactScreen(),
       AccountScreen(),
     ];
@@ -91,7 +91,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             expiringRooms: expiring,
             onRefresh: _loadData,
           ),
-          HistoryScreen(),
+          KatalogMakananScreen(),
           ContactScreen(),
           AccountScreen(),
         ];
@@ -108,7 +108,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               expiringRooms: [],
               onRefresh: _loadData,
             ),
-            HistoryScreen(),
+            KatalogMakananScreen(),
             ContactScreen(),
             AccountScreen(),
           ];

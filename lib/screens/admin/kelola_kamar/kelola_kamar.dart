@@ -22,7 +22,7 @@ class _KelolaKamarPageState extends State<KelolaKamarPage> {
 
   final List<Widget> _screens = [
     KelolaKamarContent(),
-    HistoryScreen(),
+    KatalogMakananScreen(),
     ContactScreen(),
     AccountScreen(),
   ];
