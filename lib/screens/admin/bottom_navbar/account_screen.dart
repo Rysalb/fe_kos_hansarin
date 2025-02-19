@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:proyekkos/data/services/auth_service.dart';
 import 'package:proyekkos/screens/admin/add_admin_screen.dart';
+import 'package:proyekkos/screens/admin/biodata/biodata_screen.dart';
+import 'package:proyekkos/widgets/custom_info_dialog.dart';
 
 class AccountScreen extends StatelessWidget {
   final AuthService _authService = AuthService();
@@ -16,7 +18,12 @@ class AccountScreen extends StatelessWidget {
             icon: 'assets/images/biodata.png',
             title: 'Biodata',
             onTap: () {
-              // Navigasi ke halaman biodata
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => BiodataScreen(),
+                ),
+              );
             },
           ),
           SizedBox(height: 12),
@@ -37,7 +44,13 @@ class AccountScreen extends StatelessWidget {
             icon: 'assets/images/info.png',
             title: 'Tentang Aplikasi',
             onTap: () {
-              // Navigasi ke halaman tentang aplikasi
+              showDialog(
+                context: context,
+                builder: (context) => CustomInfoDialog(
+                  title: 'Tentang Aplikasi',
+                  message: 'Aplikasi ini dibuat untuk memudahkan pengelola kos dalam memanajemen usaha kosnya.',
+                ),
+              );
             },
           ),
           SizedBox(height: 12),
@@ -45,7 +58,6 @@ class AccountScreen extends StatelessWidget {
             icon: 'assets/images/logout.png',
             title: 'Keluar',
             onTap: () async {
-              // Implementasi logout
               await _authService.logout();
               Navigator.of(context).pushReplacementNamed('/login');
             },

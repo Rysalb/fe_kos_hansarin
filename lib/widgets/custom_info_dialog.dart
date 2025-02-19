@@ -29,4 +29,51 @@ class CustomInfoDialog extends StatelessWidget {
       ],
     );
   }
+}
+
+class AboutAppDialog extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Container(
+        padding: EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Tentang Aplikasi',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF4A2F1C),
+              ),
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Aplikasi ini dibuat untuk memudahkan pengelola kos dalam memanajemen usaha kosnya.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.black87,
+              ),
+            ),
+            SizedBox(height: 20),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                'Tutup',
+                style: TextStyle(
+                  color: Color(0xFF4A2F1C),
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 } 
