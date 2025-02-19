@@ -313,4 +313,61 @@ class AuthService {
       throw Exception('Error: $e');
     }
   }
+
+  Future<void> updateProfile({
+    required String name,
+    required String email,
+    required String nomorWa,
+  }) async {
+    try {
+      final token = await getToken();
+      if (token == null) throw Exception('Token tidak ditemukan');
+
+      final response = await http.post(
+        Uri.parse('${ApiConstants.baseUrl}/profile/update'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'name': name,
+          'email': email,
+          'nomor_wa': nomorWa,
+        }),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Gagal mengupdate profile');
+      }
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
+
+  Future<void> sendResetPasswordLink() async {
+    try {
+      final token = await getToken();
+      if (token == null) throw Exception('Token tidak ditemukan');
+
+      final response = await http.post(
+        Uri.parse('${ApiConstants.baseUrl}/password/email'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      print('Reset password response: ${response.body}'); // Untuk debugging
+
+      if (response.statusCode != 200) {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['message'] ?? 'Gagal mengirim link reset password');
+      }
+    } catch (e) {
+      print('Reset password error: $e'); // Untuk debugging
+      throw Exception('Gagal mengirim link reset password');
+    }
+  }
 }

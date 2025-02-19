@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:proyekkos/data/services/auth_service.dart';
+import 'package:proyekkos/screens/admin/biodata/ubah_biodata_screen.dart';
+import 'package:proyekkos/screens/admin/biodata/reset_password_dialog.dart';
 
 class BiodataScreen extends StatefulWidget {
   @override
@@ -57,15 +59,28 @@ class _BiodataScreenState extends State<BiodataScreen> {
                   SizedBox(height: 24),
                   _buildButton(
                     'Ubah Data',
-                    onPressed: () {
-                      // Navigasi ke screen ubah data
+                    onPressed: () async {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => UbahBiodataScreen(userData: _userData),
+                        ),
+                      );
+                      if (result == true) {
+                        _loadUserData();
+                      }
                     },
                   ),
                   SizedBox(height: 16),
                   _buildButton(
                     'Ubah Password',
                     onPressed: () {
-                      // Navigasi ke screen ubah password
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ResetPasswordDialog(),
+                        ),
+                      );
                     },
                   ),
                 ],
