@@ -119,7 +119,7 @@ class _RiwayatPembayaranScreenState extends State<RiwayatPembayaranScreen> {
                                 width: 50,
                                 height: 50,
                               ),
-                              title: Text('Kamar ${penyewa['nomor_kamar']}'),
+                              title: Text('Kamar ${penyewa['unit_kamar']['nomor_kamar']}'),
                               subtitle: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [

@@ -7,6 +7,8 @@ import 'bottom_navbar/history_screen.dart';
 import 'bottom_navbar/contact_screen.dart';
 import 'bottom_navbar/account_screen.dart';
 import 'penghuni_kamar_screen.dart';
+import 'pembayaran/bayar_sewa_screen.dart';
+import 'pembayaran/histori_pembayaran_screen.dart';
 
 class DashboardPage extends StatefulWidget {
   @override
@@ -134,12 +136,26 @@ class _DashboardPageState extends State<DashboardPage> {
                         _buildMenuCard(
                           imagePath: 'assets/images/dashboard_icon/metode_pembayaran.png',
                           label: 'Bayar Sewa\nKos',
-                          onTap: () {},
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => BayarSewaScreen(),
+                              ),
+                            );
+                          },
                         ),
                         _buildMenuCard(
                           imagePath: 'assets/images/dashboard_icon/verifikasi_pembayaran.png',
                           label: 'Histori\nPembayaran',
-                          onTap: () {},
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => HistoriPembayaranScreen(),
+                              ),
+                            );
+                          },
                         ),
                         _buildMenuCard(
                           imagePath: 'assets/images/dashboard_icon/nomor_penting.png',

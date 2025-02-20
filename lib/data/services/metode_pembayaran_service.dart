@@ -8,13 +8,14 @@ class MetodePembayaranService {
     try {
       final response = await http.get(
         Uri.parse('${ApiConstants.baseUrl}/metode-pembayaran'),
+        headers: {'Accept': 'application/json'},
       );
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(response.body);
-        return List<Map<String, dynamic>>.from(data['data']);
+        final List<dynamic> data = json.decode(response.body)['data'];
+        return List<Map<String, dynamic>>.from(data);
       } else {
-        throw Exception('Failed to load metode pembayaran');
+        throw Exception('Gagal memuat metode pembayaran');
       }
     } catch (e) {
       throw Exception('Error: $e');
@@ -127,6 +128,6 @@ class MetodePembayaranService {
 
   String getImageUrl(String? path) {
     if (path == null || path.isEmpty) return '';
-    return '${ApiConstants.baseUrlStorage}/storage/${path}';
+    return '${path}';
   }
 } 

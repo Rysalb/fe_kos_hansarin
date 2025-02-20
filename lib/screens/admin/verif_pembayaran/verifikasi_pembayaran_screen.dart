@@ -41,6 +41,7 @@ class _VerifikasiPembayaranScreenState extends State<VerifikasiPembayaranScreen>
   Future<void> _verifikasiPembayaran(int idPembayaran, bool isVerified) async {
     try {
       await _service.verifikasi(
+        jumlahPembayaran: 0.0,
         idPembayaran: idPembayaran,
         statusVerifikasi: isVerified ? 'verified' : 'rejected',
         keterangan: isVerified ? 'Pembayaran diverifikasi' : 'Pembayaran ditolak',
@@ -159,7 +160,7 @@ class _VerifikasiPembayaranScreenState extends State<VerifikasiPembayaranScreen>
     );
   }
 
-  Future<void> _showVerifikasiConfirmation(int idPembayaran) async {
+  Future<void> _showVerifikasiConfirmation(Map<String, dynamic> pembayaran) async {
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -182,7 +183,25 @@ class _VerifikasiPembayaranScreenState extends State<VerifikasiPembayaranScreen>
     );
 
     if (result == true) {
-      await _verifikasiPembayaran(idPembayaran, true);
+      try {
+        double jumlahPembayaran = double.parse(pembayaran['jumlah_pembayaran'].toString());
+        
+        await _service.verifikasi(
+          idPembayaran: pembayaran['id_pembayaran'],
+          statusVerifikasi: 'verified',
+          keterangan: 'Pembayaran diverifikasi',
+          jumlahPembayaran: jumlahPembayaran,
+        );
+        
+        await _loadPembayaran();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Pembayaran berhasil diverifikasi')),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal memverifikasi pembayaran')),
+        );
+      }
     }
   }
 
@@ -228,6 +247,7 @@ class _VerifikasiPembayaranScreenState extends State<VerifikasiPembayaranScreen>
     if (result != null) {
       try {
         await _service.verifikasi(
+          jumlahPembayaran: 0.0,
           idPembayaran: idPembayaran,
           statusVerifikasi: 'rejected',
           keterangan: result,
@@ -304,7 +324,7 @@ class _VerifikasiPembayaranScreenState extends State<VerifikasiPembayaranScreen>
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        'Kamar ${penyewa['nomor_kamar']}',
+                                        'Kamar ${penyewa['unit_kamar']['nomor_kamar']}',
                                         style: TextStyle(
                                           fontSize: 18,
                                           fontWeight: FontWeight.bold,
@@ -312,12 +332,12 @@ class _VerifikasiPembayaranScreenState extends State<VerifikasiPembayaranScreen>
                                       ),
                                       Text(pembayaran['jenis_pembayaran'] ?? 'Bayar Sewa Kamar'),
                                       SizedBox(height: 8),
-                                      Text('Nama: ${penyewa['nama']}'),
-                                      Text('Asal: ${penyewa['asal']}'),
+                                      Text('Nama: ${penyewa['user']['name']}'),
+                                      Text('Asal: ${penyewa['alamat_asal']}'),
                                       Text('Tanggal Masuk: ${DateFormat('dd MMM yyyy').format(DateTime.parse(penyewa['tanggal_masuk']))}'),
                                       Text('Tanggal Keluar: ${DateFormat('dd MMM yyyy').format(DateTime.parse(penyewa['tanggal_keluar']))}'),
-                                      Text('No HP: ${penyewa['no_hp']}'),
-                                      Text('Pembayaran Melalui: ${pembayaran['metode_pembayaran']}'),
+                                      Text('No HP: ${penyewa['nomor_wa']}'),
+                                      Text('Pembayaran Melalui: ${pembayaran['metode_pembayaran']['nama']}'),
                                     ],
                                   ),
                                 ),
@@ -344,7 +364,7 @@ class _VerifikasiPembayaranScreenState extends State<VerifikasiPembayaranScreen>
                                   child: Text('Detail'),
                                 ),
                                 ElevatedButton(
-                                  onPressed: () => _showVerifikasiConfirmation(pembayaran['id_pembayaran']),
+                                  onPressed: () => _showVerifikasiConfirmation(pembayaran), // Pass the whole pembayaran object
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.green,
                                     padding: EdgeInsets.symmetric(horizontal: 24),
