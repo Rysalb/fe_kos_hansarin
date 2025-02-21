@@ -13,9 +13,21 @@ class KwitansiPembayaranScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final formatter = NumberFormat.currency(
       locale: 'id_ID',
-      symbol: 'IDR ',
+      symbol: 'Rp ', // Ubah dari IDR ke Rp
       decimalDigits: 0,
     );
+
+    // Convert jumlah_pembayaran to double safely
+    final jumlah = transaksi['jumlah_pembayaran'] != null 
+        ? (transaksi['jumlah_pembayaran'] is num 
+            ? (transaksi['jumlah_pembayaran'] as num).toDouble()
+            : double.tryParse(transaksi['jumlah_pembayaran'].toString()) ?? 0.0)
+        : 0.0;
+
+    // Get id_pembayaran and ensure it's padded
+    final nomorPembayaran = (transaksi['id_pembayaran'] ?? '')
+        .toString()
+        .padLeft(8, '0');
 
     return Scaffold(
       appBar: AppBar(
@@ -71,7 +83,7 @@ class KwitansiPembayaranScreen extends StatelessWidget {
                     ),
                     Center(
                       child: Text(
-                        formatter.format(double.parse(transaksi['jumlah'].toString())),
+                        formatter.format(jumlah), // Use the converted amount
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 24,
@@ -82,17 +94,17 @@ class KwitansiPembayaranScreen extends StatelessWidget {
                     SizedBox(height: 24),
                     _buildInfoRow(
                       'Nomor\nPembayaran',
-                      transaksi['id'].toString().padLeft(11, '0'),
+                      nomorPembayaran,
                     ),
                     _buildInfoRow(
                       'Tanggal\nPembayaran',
                       DateFormat('dd MMMM yyyy').format(
-                        DateTime.parse(transaksi['tanggal']),
+                        DateTime.parse(transaksi['tanggal'] ?? DateTime.now().toString()),
                       ),
                     ),
                     _buildInfoRow(
                       'Pembayaran\nMelalui',
-                      transaksi['metode_pembayaran'] ?? 'BCA',
+                      transaksi['metode_pembayaran'] ?? 'Tidak diketahui',
                     ),
                     _buildInfoRow(
                       'Status',
@@ -170,4 +182,4 @@ class KwitansiPembayaranScreen extends StatelessWidget {
       ),
     );
   }
-} 
+}

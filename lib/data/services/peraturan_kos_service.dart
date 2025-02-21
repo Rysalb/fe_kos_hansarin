@@ -6,16 +6,27 @@ class PeraturanKosService {
   Future<List<Map<String, dynamic>>> getAllPeraturan() async {
     try {
       final response = await http.get(
-        Uri.parse('${ApiConstants.baseUrl}/peraturan-kos'),
+        Uri.parse('${ApiConstants.baseUrl}/peraturan-kos/get/all'),
+        headers: {'Accept': 'application/json'},
       );
 
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
       if (response.statusCode == 200) {
-        List<dynamic> data = json.decode(response.body);
-        return List<Map<String, dynamic>>.from(data);
+        final responseData = json.decode(response.body);
+        
+        if (responseData is List) {
+          return List<Map<String, dynamic>>.from(responseData);
+        } else if (responseData['data'] != null) {
+          return List<Map<String, dynamic>>.from(responseData['data']);
+        }
+        return [];
       } else {
-        throw Exception('Failed to load peraturan kos');
+        throw Exception('Gagal memuat peraturan kos');
       }
     } catch (e) {
+      print('Error in getAllPeraturan: $e');
       throw Exception('Error: $e');
     }
   }
@@ -59,4 +70,4 @@ class PeraturanKosService {
       throw Exception('Error: $e');
     }
   }
-} 
+}

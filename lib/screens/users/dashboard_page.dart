@@ -3,12 +3,14 @@ import 'package:proyekkos/screens/users/chat_pengelola.dart';
 import '../../data/services/auth_service.dart';
 import '../../widgets/dashboard_skeleton.dart';
 import '../../widgets/custom_bottom_navbarUser.dart';
-import 'bottom_navbar/history_screen.dart';
+import 'bottom_navbar/pesan_makanan_screen.dart';
 import 'bottom_navbar/contact_screen.dart';
 import 'bottom_navbar/account_screen.dart';
 import 'penghuni_kamar_screen.dart';
 import 'pembayaran/bayar_sewa_screen.dart';
 import 'pembayaran/histori_pembayaran_screen.dart';
+import 'nomor_penting_screen.dart';
+import 'peraturan_kos_screen.dart';
 
 class DashboardPage extends StatefulWidget {
   @override
@@ -33,7 +35,7 @@ class _DashboardPageState extends State<DashboardPage> {
     setState(() {
       _screens = [
         _buildMainDashboard(),
-        HistoryScreen(),
+        PesanMakananScreen(),
         ContactScreen(),
         AccountScreen(),
       ];
@@ -160,12 +162,26 @@ class _DashboardPageState extends State<DashboardPage> {
                         _buildMenuCard(
                           imagePath: 'assets/images/dashboard_icon/nomor_penting.png',
                           label: 'Nomor\nPenting',
-                          onTap: () {},
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => NomorPentingScreen(),
+                              ),
+                            );
+                          },
                         ),
                         _buildMenuCard(
                           imagePath: 'assets/images/dashboard_icon/peraturan_kos.png',
                           label: 'Peraturan\nKos',
-                          onTap: () {},
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => PeraturanKosScreen(),
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ),

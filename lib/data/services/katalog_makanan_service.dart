@@ -131,13 +131,17 @@ class KatalogMakananService {
       );
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        return List<Map<String, dynamic>>.from(data);
+        // Decode response body
+        final responseData = json.decode(response.body);
+        
+        // Langsung return data tanpa mapping tambahan
+        return List<Map<String, dynamic>>.from(responseData);
       } else {
-        throw Exception('Gagal memuat data katalog');
+        throw Exception('Gagal memuat katalog makanan');
       }
     } catch (e) {
+      print('Error in getByKategori: $e');
       throw Exception('Error: $e');
     }
   }
-} 
+}

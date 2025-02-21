@@ -7,15 +7,27 @@ class NomorPentingService {
     try {
       final response = await http.get(
         Uri.parse('${ApiConstants.baseUrl}/nomor-penting/get/all'),
+        headers: {'Accept': 'application/json'},
       );
 
       if (response.statusCode == 200) {
-        List<dynamic> data = json.decode(response.body);
-        return List<Map<String, dynamic>>.from(data);
+        final responseData = json.decode(response.body);
+        // Print the response for debugging
+        print('Response data: $responseData');
+        
+        if (responseData is List) {
+          // If response is directly a list
+          return List<Map<String, dynamic>>.from(responseData);
+        } else if (responseData['data'] != null) {
+          // If response has a data field
+          return List<Map<String, dynamic>>.from(responseData['data']);
+        }
+        return [];
       } else {
-        throw Exception('Failed to load nomor penting');
+        throw Exception('Gagal memuat nomor penting: ${response.statusCode}');
       }
     } catch (e) {
+      print('Error in getAllNomorPenting: $e');
       throw Exception('Error: $e');
     }
   }
@@ -69,4 +81,4 @@ class NomorPentingService {
       throw Exception('Error: $e');
     }
   }
-} 
+}
