@@ -440,21 +440,32 @@ class _PemasukanPengeluaranScreenState extends State<PemasukanPengeluaranScreen>
         final isIncome = transaksi['jenis_transaksi'] == 'pemasukan';
         final jumlah = double.parse(transaksi['jumlah'].toString());
         
-        // Cek apakah transaksi berasal dari pembayaran sewa
-        final isFromPayment = transaksi['keterangan']?.toString().contains('[ID Penyewa:') ?? false;
+        // Check if transaction is Pembayaran Sewa based on kategori only
+        final isFromPayment = transaksi['kategori'] == 'Pembayaran Sewa';
         
         return GestureDetector(
           onTap: () async {
-            if (transaksi['jenis_transaksi'] == 'pemasukan') {
+            if (isFromPayment) {
+              // Show Kwitansi for rent payments
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => KwitansiPembayaranScreen(
-                    transaksi: transaksi,
+                    transaksi: {
+                      'jumlah_pembayaran': jumlah,
+                      'id_pembayaran': transaksi['id_pembayaran']?.toString() ?? '',
+                      'tanggal': transaksi['tanggal_pembayaran'] ?? transaksi['tanggal'],
+                      'metode_pembayaran': transaksi['metode_pembayaran']?['nama_metode'] ?? 'Tidak diketahui',
+                      'keterangan': transaksi['keterangan'] ?? '',
+                      'status': 'verified',
+                      'nama_penyewa': transaksi['penyewa']?['user']?['name'] ?? 'Tidak diketahui',
+                      'nomor_kamar': transaksi['penyewa']?['unit_kamar']?['nomor_kamar'] ?? '-',
+                    },
                   ),
                 ),
               );
             } else {
+              // Show edit screen for manual transactions
               final result = await Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -464,7 +475,7 @@ class _PemasukanPengeluaranScreenState extends State<PemasukanPengeluaranScreen>
                 ),
               );
               
-              if (result != null && result == true) {
+              if (result == true) {
                 await _loadData();
               }
             }
@@ -477,15 +488,44 @@ class _PemasukanPengeluaranScreenState extends State<PemasukanPengeluaranScreen>
                 width: 50,
                 height: 50,
               ),
-              title: Text(transaksi['kategori']),
+              title: Row(
+                children: [
+                  Text(transaksi['kategori']),
+                  if (isFromPayment)
+                    Padding(
+                      padding: EdgeInsets.only(left: 8),
+                      child: Icon(
+                        Icons.receipt_long,
+                        size: 16,
+                        color: Colors.blue,
+                      ),
+                    ),
+                ],
+              ),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(transaksi['keterangan'] ?? ''),
                   Text(
-                    DateFormat('dd MMM yyyy').format(DateTime.parse(transaksi['tanggal'])),
+                    DateFormat('dd MMM yyyy').format(
+                      DateTime.parse(transaksi['tanggal_pembayaran'] ?? transaksi['tanggal'])
+                    ),
                     style: TextStyle(fontSize: 12),
                   ),
+                  if (isFromPayment) ...[
+                    Text(
+                      'Metode: ${transaksi['metode_pembayaran']?['nama_metode'] ?? 'Tidak diketahui'}',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                    Text(
+                      'Kamar: ${transaksi['penyewa']?['unit_kamar']?['nomor_kamar'] ?? '-'}',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                    Text(
+                      'Penyewa: ${transaksi['penyewa']?['user']?['name'] ?? 'Tidak diketahui'}',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  ],
                 ],
               ),
               trailing: Text(
@@ -501,4 +541,4 @@ class _PemasukanPengeluaranScreenState extends State<PemasukanPengeluaranScreen>
       },
     );
   }
-} 
+}

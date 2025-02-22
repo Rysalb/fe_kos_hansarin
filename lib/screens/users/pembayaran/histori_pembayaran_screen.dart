@@ -80,16 +80,18 @@ class _HistoriPembayaranScreenState extends State<HistoriPembayaranScreen> {
         ? num.tryParse(pembayaran['jumlah_pembayaran'].toString()) ?? 0 
         : 0;
 
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        child: KwitansiPembayaranScreen(transaksi: {
-          'jumlah_pembayaran': jumlah, // Pass as number instead of string
-          'id_pembayaran': pembayaran['id']?.toString() ?? '',
-          'tanggal': pembayaran['tanggal_pembayaran']?.toString() ?? DateTime.now().toString(),
-          'metode_pembayaran': pembayaran['metode_pembayaran']?['nama_metode']?.toString() ?? 'Tidak diketahui',
-          'keterangan': pembayaran['keterangan']?.toString() ?? '',
-        }),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => KwitansiPembayaranScreen(
+          transaksi: {
+            'jumlah_pembayaran': jumlah,
+            'id_pembayaran': pembayaran['id']?.toString() ?? '',
+            'tanggal': pembayaran['tanggal_pembayaran']?.toString() ?? DateTime.now().toString(),
+            'metode_pembayaran': pembayaran['metode_pembayaran']?['nama_metode']?.toString() ?? 'Tidak diketahui',
+            'keterangan': pembayaran['keterangan']?.toString() ?? '',
+          },
+        ),
       ),
     );
   }
@@ -116,7 +118,7 @@ class _HistoriPembayaranScreenState extends State<HistoriPembayaranScreen> {
               decimalDigits: 0,
             ).format(jumlah)}'),
             SizedBox(height: 8),
-            Text('Metode: ${pembayaran['metode_pembayaran']?['nama'] ?? 'Tidak diketahui'}'),
+            Text('Metode: ${pembayaran['metode_pembayaran']?['nama_metode'] ?? 'Tidak diketahui'}'),
             SizedBox(height: 16),
             Text('Menunggu verifikasi dari admin'),
           ],
@@ -153,7 +155,7 @@ class _HistoriPembayaranScreenState extends State<HistoriPembayaranScreen> {
               decimalDigits: 0,
             ).format(jumlah)}'),
             SizedBox(height: 8),
-            Text('Metode: ${pembayaran['metode_pembayaran']?['nama'] ?? 'Tidak diketahui'}'),
+            Text('Metode: ${pembayaran['metode_pembayaran']?['nama_metode'] ?? 'Tidak diketahui'}'),
             SizedBox(height: 16),
             Text('Alasan Penolakan:'),
             Text(pembayaran['keterangan'] ?? 'Tidak ada keterangan',

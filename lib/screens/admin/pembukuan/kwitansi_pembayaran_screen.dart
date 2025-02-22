@@ -1,13 +1,44 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:screenshot/screenshot.dart';
+import 'package:gallery_saver/gallery_saver.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
 
 class KwitansiPembayaranScreen extends StatelessWidget {
   final Map<String, dynamic> transaksi;
+  final _screenshotController = ScreenshotController();
   
-  const KwitansiPembayaranScreen({
+  KwitansiPembayaranScreen({
     Key? key,
     required this.transaksi,
   }) : super(key: key);
+
+  Future<void> _saveToGallery(BuildContext context) async {
+    try {
+      // Capture the receipt as image
+      final image = await _screenshotController.capture();
+      if (image == null) return;
+
+      // Get temporary directory
+      final tempDir = await getTemporaryDirectory();
+      final file = File('${tempDir.path}/kwitansi_${DateTime.now().millisecondsSinceEpoch}.png');
+      
+      // Write image to file
+      await file.writeAsBytes(image);
+      
+      // Save to gallery
+      await GallerySaver.saveImage(file.path);
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Kwitansi berhasil disimpan ke galeri')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal menyimpan kwitansi: $e')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,110 +64,119 @@ class KwitansiPembayaranScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text('Rincian Pembayaran'),
         backgroundColor: Color(0xFFE7B789),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.save_alt),
+            onPressed: () => _saveToGallery(context),
+          ),
+        ],
       ),
-      body: Container(
-        color: Colors.grey[100],
-        child: Column(
-          children: [
-            Expanded(
-              child: Container(
-                margin: EdgeInsets.all(16),
-                padding: EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Color(0xFF2D2D2D),
-                  borderRadius: BorderRadius.circular(12),
+      body: Screenshot(
+        controller: _screenshotController,
+        child: Container(
+          color: Colors.grey[100],
+          child: Column(
+            children: [
+              Expanded(
+                child: Container(
+                  margin: EdgeInsets.all(16),
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Color(0xFF2D2D2D),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: Column(
+                          children: [
+                            Text(
+                              'Pembayaran Berhasil',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              'Pembayaran telah diterima',
+                              style: TextStyle(
+                                color: Colors.grey[400],
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: 24),
+                      Center(
+                        child: Text(
+                          'Total Payment',
+                          style: TextStyle(
+                            color: Colors.grey[400],
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                      Center(
+                        child: Text(
+                          formatter.format(jumlah), // Use the converted amount
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 24),
+                      _buildInfoRow(
+                        'Nomor\nPembayaran',
+                        nomorPembayaran,
+                      ),
+                      _buildInfoRow(
+                        'Tanggal\nPembayaran',
+                        DateFormat('dd MMMM yyyy').format(
+                          DateTime.parse(transaksi['tanggal'] ?? DateTime.now().toString()),
+                        ),
+                      ),
+                      _buildInfoRow(
+                        'Pembayaran\nMelalui',
+                        transaksi['metode_pembayaran'] ?? 'Tidak diketahui',
+                      ),
+                      _buildInfoRow(
+                        'Status',
+                        'Terverifikasi',
+                        isVerified: true,
+                      ),
+                    ],
+                  ),
                 ),
+              ),
+              Container(
+                padding: EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Center(
-                      child: Column(
-                        children: [
-                          Text(
-                            'Pembayaran Berhasil',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            'Pembayaran telah diterima',
-                            style: TextStyle(
-                              color: Colors.grey[400],
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
+                    Text(
+                      'Pesan Pengelola :',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    SizedBox(height: 24),
-                    Center(
-                      child: Text(
-                        'Total Payment',
-                        style: TextStyle(
-                          color: Colors.grey[400],
-                          fontSize: 14,
-                        ),
+                    SizedBox(height: 8),
+                    Text(
+                      transaksi['keterangan'] ?? 'Uang sudah saya terima\nTerimakasih !',
+                      style: TextStyle(
+                        color: Colors.grey[600],
                       ),
-                    ),
-                    Center(
-                      child: Text(
-                        formatter.format(jumlah), // Use the converted amount
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 24),
-                    _buildInfoRow(
-                      'Nomor\nPembayaran',
-                      nomorPembayaran,
-                    ),
-                    _buildInfoRow(
-                      'Tanggal\nPembayaran',
-                      DateFormat('dd MMMM yyyy').format(
-                        DateTime.parse(transaksi['tanggal'] ?? DateTime.now().toString()),
-                      ),
-                    ),
-                    _buildInfoRow(
-                      'Pembayaran\nMelalui',
-                      transaksi['metode_pembayaran'] ?? 'Tidak diketahui',
-                    ),
-                    _buildInfoRow(
-                      'Status',
-                      'Terverifikasi',
-                      isVerified: true,
                     ),
                   ],
                 ),
               ),
-            ),
-            Container(
-              padding: EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Pesan Pengelola :',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    transaksi['keterangan'] ?? 'Uang sudah saya terima\nTerimakasih !',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
