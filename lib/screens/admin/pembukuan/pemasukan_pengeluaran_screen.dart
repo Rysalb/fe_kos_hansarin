@@ -432,7 +432,7 @@ class _PemasukanPengeluaranScreenState extends State<PemasukanPengeluaranScreen>
 
   Widget _buildTransaksiList() {
     return ListView.builder(
-      shrinkWrap: true,
+      shrinkWrap: true, 
       physics: NeverScrollableScrollPhysics(),
       itemCount: _transaksi.length,
       itemBuilder: (context, index) {
@@ -441,7 +441,7 @@ class _PemasukanPengeluaranScreenState extends State<PemasukanPengeluaranScreen>
         final jumlah = double.parse(transaksi['jumlah'].toString());
         
         // Check if transaction is Pembayaran Sewa based on kategori only
-        final isFromPayment = transaksi['kategori'] == 'Pembayaran Sewa';
+        final isFromPayment = transaksi['kategori'] == 'Pembayaran Sewa' || transaksi['kategori'] == 'pembayaran_sewa';
         
         return GestureDetector(
           onTap: () async {
