@@ -39,12 +39,15 @@ class _PemasukanPengeluaranScreenState extends State<PemasukanPengeluaranScreen>
       final transaksi = await _service.getAllTransaksi();
       
       setState(() {
-        _rekapData = rekap;
-        _transaksi = transaksi;
+        _rekapData = Map<String, dynamic>.from(rekap);
+        _transaksi = transaksi.map((item) => Map<String, dynamic>.from(item)).toList();
         _isLoading = false;
       });
     } catch (e) {
       print('Error loading data: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal memuat data: ${e.toString()}')),
+      );
       setState(() => _isLoading = false);
     }
   }
@@ -457,7 +460,7 @@ class _PemasukanPengeluaranScreenState extends State<PemasukanPengeluaranScreen>
                       'tanggal': transaksi['tanggal_pembayaran'] ?? transaksi['tanggal'],
                       'metode_pembayaran': transaksi['metode_pembayaran']?['nama_metode'] ?? 'Tidak diketahui',
                       'keterangan': transaksi['keterangan'] ?? '',
-                      'status': 'verified',
+                      'status': transaksi['status_verifikasi'] ?? 'verified',
                       'nama_penyewa': transaksi['penyewa']?['user']?['name'] ?? 'Tidak diketahui',
                       'nomor_kamar': transaksi['penyewa']?['unit_kamar']?['nomor_kamar'] ?? '-',
                     },
