@@ -61,6 +61,7 @@ class PembayaranService {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
         },
+        
         body: jsonEncode({
           'status_verifikasi': statusVerifikasi,
           'keterangan': keterangan,
@@ -78,7 +79,7 @@ class PembayaranService {
 
   String getImageUrl(String? path) {
     if (path == null || path.isEmpty) return '';
-    return '${ApiConstants.baseUrlStorage}$path'; // Sesuaikan dengan base URL Anda
+    return '${ApiConstants.baseUrlStorage}/storage/$path'; // Sesuaikan dengan base URL Anda
   }
 
   Future<String?> getToken() async {

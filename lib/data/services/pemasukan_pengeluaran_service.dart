@@ -91,10 +91,32 @@ class PemasukanPengeluaranService {
         headers: {'Accept': 'application/json'},
       );
 
-
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        return List<Map<String, dynamic>>.from(data['data']);
+        if (data['data'] != null) {
+          return List<Map<String, dynamic>>.from(data['data'].map((item) {
+            // Ensure proper type casting
+            Map<String, dynamic> mappedItem = Map<String, dynamic>.from(item);
+            
+            // Handle nested objects
+            if (item['penyewa'] != null) {
+              mappedItem['penyewa'] = Map<String, dynamic>.from(item['penyewa']);
+              if (item['penyewa']['user'] != null) {
+                mappedItem['penyewa']['user'] = Map<String, dynamic>.from(item['penyewa']['user']);
+              }
+              if (item['penyewa']['unit_kamar'] != null) {
+                mappedItem['penyewa']['unit_kamar'] = Map<String, dynamic>.from(item['penyewa']['unit_kamar']);
+              }
+            }
+            
+            if (item['metode_pembayaran'] != null) {
+              mappedItem['metode_pembayaran'] = Map<String, dynamic>.from(item['metode_pembayaran']);
+            }
+            
+            return mappedItem;
+          }));
+        }
+        return [];
       } else {
         throw Exception('Gagal memuat transaksi');
       }
@@ -188,4 +210,4 @@ class PemasukanPengeluaranService {
       throw Exception('Error: $e');
     }
   }
-} 
+}

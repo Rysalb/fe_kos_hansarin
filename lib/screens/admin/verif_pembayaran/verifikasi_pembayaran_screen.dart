@@ -79,9 +79,7 @@ class _VerifikasiPembayaranScreenState extends State<VerifikasiPembayaranScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               GestureDetector(
-                onTap: () {
-                  _showFullImage(imageUrl);
-                },
+                onTap: () => _showFullImage(imageUrl),
                 child: Container(
                   width: 100,
                   height: 100,
@@ -90,6 +88,9 @@ class _VerifikasiPembayaranScreenState extends State<VerifikasiPembayaranScreen>
                     image: DecorationImage(
                       image: NetworkImage(imageUrl),
                       fit: BoxFit.cover,
+                      onError: (_, __) {
+                        print('Error loading image');
+                      },
                     ),
                   ),
                 ),
@@ -107,7 +108,10 @@ class _VerifikasiPembayaranScreenState extends State<VerifikasiPembayaranScreen>
               SizedBox(height: 16),
               _buildDetailRow('Kategori', pembayaran['jenis_pembayaran'] ?? 'Bayar Sewa Kamar'),
               _buildDetailRow('No Pesanan', pembayaran['id_pembayaran']?.toString()?.padLeft(6, '0') ?? 'N/A'),
-              _buildDetailRow('Via Pembayaran', pembayaran['metode_pembayaran'] ?? 'N/A'),
+              _buildDetailRow(
+                'Via Pembayaran', 
+                pembayaran['metode_pembayaran']?['nama'] ?? 'Tidak diketahui'
+              ),
               _buildDetailRow('Tanggal Bayar', 
                 DateFormat('dd MMMM yyyy').format(DateTime.parse(pembayaran['tanggal_pembayaran'] ?? DateTime.now().toString()))
               ),
@@ -134,7 +138,21 @@ class _VerifikasiPembayaranScreenState extends State<VerifikasiPembayaranScreen>
       context: context,
       builder: (context) => Dialog(
         child: Container(
-          child: Image.network(imageUrl),
+          child: Image.network(
+            imageUrl,
+            errorBuilder: (context, error, stackTrace) {
+              print('Error loading full image: $error');
+              return Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.error, color: Colors.red),
+                    Text('Gagal memuat gambar'),
+                  ],
+                ),
+              );
+            },
+          ),
         ),
       ),
     );
