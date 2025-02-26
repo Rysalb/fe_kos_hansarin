@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:proyekkos/screens/users/menu_list_screen.dart';
+import 'package:proyekkos/screens/users/order_menu/menu_list_screen.dart';
 
 class PesanMakananScreen extends StatelessWidget {
   @override

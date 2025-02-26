@@ -198,86 +198,111 @@ class _RegisterPageState extends State<RegisterPage> {
       backgroundColor: Color(0xFFFFF8E7),
       appBar: AppBar(
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(Icons.arrow_back, color: Color(0xFF4A2F1C)),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text('Kembali', style: TextStyle(color: Colors.black)),
+        title: Text(
+          'Registrasi',
+          style: TextStyle(
+            color: Color(0xFF4A2F1C),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(24.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildKamarDropdown(),
-              SizedBox(height: 16),
-              _buildTextField(
-                controller: _nameController,
-                label: 'Nama Lengkap',
-                validator: (value) => value!.isEmpty ? 'Masukkan nama lengkap' : null,
-              ),
-              SizedBox(height: 16),
-              _buildTextField(
-                controller: _whatsappController,
-                label: 'Nomor WhatsApp',
-                keyboardType: TextInputType.phone,
-                validator: (value) => value!.isEmpty ? 'Masukkan nomor WhatsApp' : null,
-              ),
-              SizedBox(height: 16),
-              _buildKTPUpload(),
-              SizedBox(height: 16),
-              _buildTextField(
-                controller: _emailController,
-                label: 'Email',
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) => value!.isEmpty ? 'Masukkan email' : null,
-              ),
-              SizedBox(height: 16),
-              _buildTextField(
-                controller: _nikController,
-                label: 'NIK',
-                keyboardType: TextInputType.number,
-                validator: (value) => value!.length != 16 ? 'NIK harus 16 digit' : null,
-              ),
-              SizedBox(height: 16),
-              _buildTextField(
-                controller: _alamatController,
-                label: 'Alamat Asal',
-                maxLines: 3,
-                validator: (value) => value!.isEmpty ? 'Masukkan alamat asal' : null,
-              ),
-              SizedBox(height: 16),
-              _buildTextField(
-                controller: _passwordController,
-                label: 'Password',
-                obscureText: _obscureText,
-                validator: (value) => value!.length < 8 ? 'Password minimal 8 karakter' : null,
-                suffixIcon: IconButton(
-                  icon: Icon(_obscureText ? Icons.visibility_off : Icons.visibility),
-                  onPressed: () => setState(() => _obscureText = !_obscureText),
-                ),
-              ),
-              SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _register,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFF4A2F1C),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(25),
-                    ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFFFF8E7), Color(0xFFFFE5CC)],
+          ),
+        ),
+        child: SingleChildScrollView(
+          padding: EdgeInsets.all(24.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Selamat Datang!',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF4A2F1C),
                   ),
-                  child: _isLoading
-                      ? CircularProgressIndicator(color: Colors.white)
-                      : Text('Register', style: TextStyle(fontSize: 16)),
                 ),
-              ),
-            ],
+                Text(
+                  'Silakan lengkapi data diri Anda',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.brown[400],
+                  ),
+                ),
+                SizedBox(height: 32),
+                _buildKamarDropdown(),
+                SizedBox(height: 20),
+                _buildTextField(
+                  controller: _nameController,
+                  label: 'Nama Lengkap',
+                  icon: Icons.person,
+                  validator: (value) => value!.isEmpty ? 'Masukkan nama lengkap' : null,
+                ),
+                SizedBox(height: 20),
+                _buildTextField(
+                  controller: _whatsappController,
+                  label: 'Nomor WhatsApp',
+                  icon: Icons.phone,
+                  keyboardType: TextInputType.phone,
+                  validator: (value) => value!.isEmpty ? 'Masukkan nomor WhatsApp' : null,
+                ),
+                SizedBox(height: 20),
+                _buildKTPUpload(),
+                SizedBox(height: 20),
+                _buildTextField(
+                  controller: _emailController,
+                  label: 'Email',
+                  icon: Icons.email,
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (value) => value!.isEmpty ? 'Masukkan email' : null,
+                ),
+                SizedBox(height: 20),
+                _buildTextField(
+                  controller: _nikController,
+                  label: 'NIK',
+                  icon: Icons.badge,
+                  keyboardType: TextInputType.number,
+                  validator: (value) => value!.length != 16 ? 'NIK harus 16 digit' : null,
+                ),
+                SizedBox(height: 20),
+                _buildTextField(
+                  controller: _alamatController,
+                  label: 'Alamat Asal',
+                  icon: Icons.home,
+                  maxLines: 3,
+                  validator: (value) => value!.isEmpty ? 'Masukkan alamat asal' : null,
+                ),
+                SizedBox(height: 20),
+                _buildTextField(
+                  controller: _passwordController,
+                  label: 'Password',
+                  icon: Icons.lock,
+                  obscureText: _obscureText,
+                  validator: (value) => value!.length < 8 ? 'Password minimal 8 karakter' : null,
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscureText ? Icons.visibility_off : Icons.visibility,
+                      color: Color(0xFF4A2F1C),
+                    ),
+                    onPressed: () => setState(() => _obscureText = !_obscureText),
+                  ),
+                ),
+                SizedBox(height: 32),
+                _buildRegisterButton(),
+              ],
+            ),
           ),
         ),
       ),
@@ -287,35 +312,62 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
+    required IconData icon,
     bool obscureText = false,
     TextInputType? keyboardType,
     Widget? suffixIcon,
     int? maxLines = 1,
     String? Function(String?)? validator,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label),
-        SizedBox(height: 8),
-        TextFormField(
-          controller: controller,
-          obscureText: obscureText,
-          keyboardType: keyboardType,
-          maxLines: maxLines,
-          validator: validator,
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: Color(0xFFFFE5CC),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(25),
-              borderSide: BorderSide.none,
-            ),
-            contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            suffixIcon: suffixIcon,
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.brown.withOpacity(0.1),
+            blurRadius: 10,
+            offset: Offset(0, 4),
           ),
-        ),
-      ],
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF4A2F1C),
+            ),
+          ),
+          SizedBox(height: 8),
+          TextFormField(
+            controller: controller,
+            obscureText: obscureText,
+            keyboardType: keyboardType,
+            maxLines: maxLines,
+            validator: validator,
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: Colors.white,
+              prefixIcon: Icon(icon, color: Color(0xFF4A2F1C)),
+              suffixIcon: suffixIcon,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(15),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(15),
+                borderSide: BorderSide(color: Color(0xFFE7B789), width: 1),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(15),
+                borderSide: BorderSide(color: Color(0xFF4A2F1C), width: 2),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -415,6 +467,46 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
         ),
       ],
+    );
+  }
+
+  Widget _buildRegisterButton() {
+    return Container(
+      width: double.infinity,
+      height: 55,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(15),
+        gradient: LinearGradient(
+          colors: [Color(0xFF4A2F1C), Color(0xFF8B4513)],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0xFF4A2F1C).withOpacity(0.3),
+            blurRadius: 8,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ElevatedButton(
+        onPressed: _isLoading ? null : _register,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+        ),
+        child: _isLoading
+            ? CircularProgressIndicator(color: Colors.white)
+            : Text(
+                'Register',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+      ),
     );
   }
 

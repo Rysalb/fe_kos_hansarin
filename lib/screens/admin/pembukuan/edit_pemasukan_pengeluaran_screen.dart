@@ -59,7 +59,7 @@ class _EditPemasukanPengeluaranScreenState extends State<EditPemasukanPengeluara
     _isPemasukan = widget.transaksi['jenis_transaksi'] == 'pemasukan';
 
     // Log ID transaksi untuk debugging
-    print('ID Transaksi: ${widget.transaksi['id']}');
+    print('ID Transaksi: ${widget.transaksi['id_transaksi']}');
   }
 
   void _formatCurrency(String value) {
@@ -115,53 +115,54 @@ class _EditPemasukanPengeluaranScreenState extends State<EditPemasukanPengeluara
   }
 
   Future<void> _deleteTransaksi() async {
-    try {
-      // Pastikan ID transaksi tidak null
-      if (widget.transaksi['id'] == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('ID transaksi tidak valid')),
-        );
-        return;
-      }
-
-      bool confirm = await showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text('Konfirmasi'),
-          content: Text('Apakah Anda yakin ingin menghapus transaksi ini?'),
-          actions: [
-            TextButton(
-              child: Text('Batal'),
-              onPressed: () => Navigator.pop(context, false),
-            ),
-            TextButton(
-              child: Text('Hapus'),
-              onPressed: () => Navigator.pop(context, true),
-            ),
-          ],
-        ),
-      ) ?? false;
-
-      if (confirm) {
-        await _service.delete(widget.transaksi['id']);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Transaksi berhasil dihapus')),
-        );
-        Navigator.pop(context, true);
-      }
-    } catch (e) {
+  try {
+    // Pastikan ID transaksi tidak null
+    if (widget.transaksi['id_transaksi'] == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal menghapus transaksi: ${e.toString()}')),
+        SnackBar(content: Text('ID transaksi tidak valid')),
       );
+      return;
     }
+
+    bool confirm = await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Konfirmasi'),
+        content: Text('Apakah Anda yakin ingin menghapus transaksi ini?'),
+        actions: [
+          TextButton(
+            child: Text('Batal'),
+            onPressed: () => Navigator.pop(context, false),
+          ),
+          TextButton(
+            child: Text('Hapus'),
+            onPressed: () => Navigator.pop(context, true),
+          ),
+        ],
+      ),
+    ) ?? false;
+
+    if (confirm) {
+      // Use id_transaksi instead of id
+      await _service.delete(widget.transaksi['id_transaksi']);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Transaksi berhasil dihapus')),
+      );
+      Navigator.pop(context, true);
+    }
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Gagal menghapus transaksi: ${e.toString()}')),
+    );
   }
+}
 
   Future<void> _updateTransaksi() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
       try {
         // Pastikan ID transaksi tidak null
-        if (widget.transaksi['id'] == null) {
+        if (widget.transaksi['id_transaksi'] == null) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('ID transaksi tidak valid')),
           );
@@ -172,7 +173,7 @@ class _EditPemasukanPengeluaranScreenState extends State<EditPemasukanPengeluara
         double jumlah = double.parse(jumlahStr);
 
         await _service.update(
-          id: widget.transaksi['id'],
+          id: widget.transaksi['id_transaksi'],
           jenisTransaksi: _isPemasukan ? 'pemasukan' : 'pengeluaran',
           kategori: _selectedKategori!,
           tanggal: _selectedDate,

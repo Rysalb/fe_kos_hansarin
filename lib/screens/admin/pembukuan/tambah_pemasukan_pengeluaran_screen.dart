@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:proyekkos/data/services/pemasukan_pengeluaran_service.dart';
+import 'package:proyekkos/data/services/penyewa_service.dart';
 
 class TambahPemasukanPengeluaranScreen extends StatefulWidget {
   final bool isPemasukan; // true untuk pemasukan, false untuk pengeluaran
@@ -20,10 +21,16 @@ class _TambahPemasukanPengeluaranScreenState extends State<TambahPemasukanPengel
   
   DateTime _selectedDate = DateTime.now();
   String? _selectedKategori;
+  String? _selectedMetodePembayaran = 'Cash'; // Set default method
   final _keteranganController = TextEditingController();
   final _jumlahController = TextEditingController();
   bool _isLoading = false;
   bool _isPemasukan = true;
+
+  // Add new variables
+  List<Map<String, dynamic>> _penyewaList = [];
+  Map<String, dynamic>? _selectedPenyewa;
+  final _penyewaService = PenyewaService();
 
   // Daftar kategori sesuai jenis transaksi
   final List<String> _kategoriPemasukan = [
@@ -39,10 +46,18 @@ class _TambahPemasukanPengeluaranScreenState extends State<TambahPemasukanPengel
     'Lainnya'
   ];
 
+  final List<String> _metodePembayaran = [
+    'Cash',
+    'Transfer Bank',
+    'E-Wallet',
+    'Pembayaran Awal'
+  ];
+
   @override
   void initState() {
     super.initState();
     _isPemasukan = widget.isPemasukan;
+    _loadPenyewa();
   }
 
   @override
@@ -88,23 +103,82 @@ class _TambahPemasukanPengeluaranScreenState extends State<TambahPemasukanPengel
     }
   }
 
+  // Update _loadPenyewa method
+  Future<void> _loadPenyewa() async {
+    try {
+      final response = await _penyewaService.getAllPenyewa();
+      setState(() {
+        _penyewaList = List<Map<String, dynamic>>.from(response); // Remove ['data'] access
+      });
+    } catch (e) {
+      print('Error loading penyewa: $e');
+    }
+  }
+
+  // Add penyewa dropdown widget
+  Widget _buildPenyewaField() {
+    return DropdownButtonFormField<Map<String, dynamic>>(
+      value: _selectedPenyewa,
+      decoration: InputDecoration(
+        labelText: 'Pilih Penyewa',
+        border: OutlineInputBorder(),
+      ),
+      items: _penyewaList.map((penyewa) {
+        return DropdownMenuItem<Map<String, dynamic>>(
+          value: penyewa,
+          child: Text('${penyewa['user']['name']} - Kamar ${penyewa['unit_kamar']['nomor_kamar']}'),
+        );
+      }).toList(),
+      onChanged: (Map<String, dynamic>? newValue) {
+        setState(() => _selectedPenyewa = newValue);
+      },
+      validator: (value) {
+        if (_selectedKategori == 'Pembayaran Sewa' && value == null) {
+          return 'Penyewa harus dipilih';
+        }
+        return null;
+      },
+    );
+  }
+
+  // Update _submitForm method
   Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
       try {
-        // Format jumlah dengan benar
         String jumlahStr = _jumlahController.text.replaceAll('Rp ', '').replaceAll('.', '');
         double jumlah = double.parse(jumlahStr);
 
-        await _service.create(
-          jenisTransaksi: _isPemasukan ? 'pemasukan' : 'pengeluaran',
-          kategori: _selectedKategori!,
-          tanggal: _selectedDate,
-          jumlah: jumlah,
-          keterangan: _keteranganController.text,
-          idPenyewa: 1, // Sesuaikan dengan ID penyewa yang sesuai
-        );
+        // Base keterangan
+        String keterangan = _keteranganController.text;
         
+        if (_selectedKategori == 'Pembayaran Sewa' && _selectedPenyewa != null) {
+          keterangan = 'Pembayaran sewa kamar ${_selectedPenyewa!['unit_kamar']['nomor_kamar']} - '
+                      '${_selectedPenyewa!['user']['name']} '
+                      '[Metode: ${_selectedMetodePembayaran}]';
+          
+          // Create pembayaran record
+          await _service.create(
+            jenisTransaksi: _isPemasukan ? 'pemasukan' : 'pengeluaran',
+            kategori: _selectedKategori!,
+            tanggal: _selectedDate,
+            jumlah: jumlah,
+            keterangan: keterangan,
+            idPenyewa: int.parse(_selectedPenyewa!['id_penyewa'].toString()), // Convert to int
+            metodePembayaran: _selectedMetodePembayaran,
+            idUser: int.parse(_selectedPenyewa!['user']['id_user'].toString()), // Add user id
+          );
+        } else {
+          // Regular transaction without payment record
+          await _service.create(
+            jenisTransaksi: _isPemasukan ? 'pemasukan' : 'pengeluaran',
+            kategori: _selectedKategori!,
+            tanggal: _selectedDate,
+            jumlah: jumlah,
+            keterangan: keterangan,
+          );
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Berhasil menyimpan transaksi')),
         );
@@ -136,6 +210,31 @@ class _TambahPemasukanPengeluaranScreenState extends State<TambahPemasukanPengel
         selection: TextSelection.collapsed(offset: formatted.length),
       );
     }
+  }
+
+  Widget _buildMetodePembayaranField() {
+    return DropdownButtonFormField<String>(
+      value: _selectedMetodePembayaran,
+      decoration: InputDecoration(
+        labelText: 'Metode Pembayaran',
+        border: OutlineInputBorder(),
+      ),
+      items: _metodePembayaran.map((String value) {
+        return DropdownMenuItem<String>(
+          value: value,
+          child: Text(value),
+        );
+      }).toList(),
+      onChanged: (String? newValue) {
+        setState(() => _selectedMetodePembayaran = newValue);
+      },
+      validator: (value) {
+        if (_selectedKategori == 'Pembayaran Sewa' && (value == null || value.isEmpty)) {
+          return 'Metode pembayaran harus dipilih';
+        }
+        return null;
+      },
+    );
   }
 
   @override
@@ -210,6 +309,14 @@ class _TambahPemasukanPengeluaranScreenState extends State<TambahPemasukanPengel
               ),
               SizedBox(height: 16),
 
+              // Add penyewa dropdown before metode pembayaran if kategori is Pembayaran Sewa
+              if (_selectedKategori == 'Pembayaran Sewa') ...[
+                _buildPenyewaField(),
+                SizedBox(height: 16),
+                _buildMetodePembayaranField(),
+                SizedBox(height: 16),
+              ],
+
               // Keterangan Field
               TextFormField(
                 controller: _keteranganController,
@@ -278,4 +385,4 @@ class _TambahPemasukanPengeluaranScreenState extends State<TambahPemasukanPengel
       ),
     );
   }
-} 
+}

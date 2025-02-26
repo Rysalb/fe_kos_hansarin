@@ -4,49 +4,57 @@ import 'package:proyekkos/core/constants/api_constants.dart';
 import 'dart:convert';
 
 class PemasukanPengeluaranService {
-  Future<Map<String, dynamic>> create({
-    required String jenisTransaksi,
-    required String kategori,
-    required DateTime tanggal,
-    required double jumlah,
-    required String keterangan,
-    int? idPenyewa,
-    bool isFromRegister = false,
-  }) async {
-    try {
-      final Map<String, dynamic> body = {
-        'jenis_transaksi': jenisTransaksi,
-        'kategori': kategori,
-        'tanggal': DateFormat('yyyy-MM-dd').format(tanggal),
-        'jumlah': jumlah,
-        'keterangan': keterangan,
-        'is_from_register': isFromRegister,
-      };
+Future<Map<String, dynamic>> create({
+  required String jenisTransaksi,
+  required String kategori,
+  required DateTime tanggal,
+  required double jumlah,
+  required String keterangan,
+  int? idPenyewa,
+  String? metodePembayaran,
+  int? idUser,
+}) async {
+  try {
+    final Map<String, dynamic> body = {
+      'jenis_transaksi': jenisTransaksi,
+      'kategori': kategori,
+      'tanggal': DateFormat('yyyy-MM-dd').format(tanggal),
+      'jumlah': jumlah,
+      'keterangan': keterangan,
+    };
 
-      // Hanya tambahkan id_penyewa jika ada
-      if (idPenyewa != null) {
-        body['id_penyewa'] = idPenyewa;
-      }
-
-      final response = await http.post(
-        Uri.parse('${ApiConstants.baseUrl}/pemasukan-pengeluaran/create'),
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode(body),
-      );
-
-      if (response.statusCode == 201) {
-        final data = json.decode(response.body);
-        return data;
-      } else {
-        throw Exception('Gagal membuat transaksi: ${response.body}');
-      }
-    } catch (e) {
-      throw Exception('Error: $e');
+    if (idPenyewa != null) {
+      body['id_penyewa'] = idPenyewa;
     }
+
+    if (idUser != null) {
+      body['id_user'] = idUser;
+    }
+
+    if (metodePembayaran != null) {
+      body['metode_pembayaran'] = metodePembayaran;
+      // Simplified mapping - automatic payment is always ID 1
+      body['id_metode'] = metodePembayaran == 'Dibayar' ? 1 : null;
+    }
+
+    final response = await http.post(
+      Uri.parse('${ApiConstants.baseUrl}/pemasukan-pengeluaran/create'),
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode(body),
+    );
+
+    if (response.statusCode == 201) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Gagal membuat transaksi: ${response.body}');
+    }
+  } catch (e) {
+    throw Exception('Error: $e');
   }
+}
 
   Future<List<Map<String, dynamic>>> getRiwayatTransaksiPenyewa(int idPenyewa) async {
     try {

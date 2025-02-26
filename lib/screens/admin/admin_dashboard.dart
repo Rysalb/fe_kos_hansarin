@@ -20,7 +20,7 @@ class AdminDashboardPage extends StatefulWidget {
   _AdminDashboardPageState createState() => _AdminDashboardPageState();
 }
 
-class _AdminDashboardPageState extends State<AdminDashboardPage> {
+class _AdminDashboardPageState extends State<AdminDashboardPage> with WidgetsBindingObserver {
   int _selectedIndex = 0;
   final AuthService _authService = AuthService();
   final KamarService _kamarService = KamarService();
@@ -33,6 +33,26 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _initializeScreens();
+    _loadData();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  // Add this method to handle app lifecycle changes
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadData();
+    }
+  }
+
+  void _initializeScreens() {
     _screens = [
       AdminDashboardContent(
         kamarStats: _kamarStats,
@@ -43,7 +63,6 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       ContactScreen(),
       AccountScreen(),
     ];
-    _loadData();
   }
 
   Future<void> _loadData() async {
@@ -129,56 +148,72 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
+      // Refresh data when returning to dashboard tab
+      if (index == 0) {
+        _loadData();
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: Size.fromHeight(50.0),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Color(0xFFE7B789),
-          ),
-          child: AppBar(
-            title: Row(
-              children: [
-                CircleAvatar(
-                  backgroundImage: AssetImage('assets/images/logo_kos.png'),
-                  radius: 20,
-                ),
-                SizedBox(width: 12),
-                Text(
-                  '${_getGreeting()}, ${_adminProfile?['name'] ?? 'Admin'}!',
-                  style: TextStyle(color: Colors.black),
+    return WillPopScope(
+      onWillPop: () async {
+        if (_selectedIndex != 0) {
+          setState(() {
+            _selectedIndex = 0;
+            _loadData(); // Refresh when returning to dashboard
+          });
+          return false;
+        }
+        return true;
+      },
+      child: Scaffold(
+        appBar: PreferredSize(
+          preferredSize: Size.fromHeight(50.0),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Color(0xFFE7B789),
+            ),
+            child: AppBar(
+              title: Row(
+                children: [
+                  CircleAvatar(
+                    backgroundImage: AssetImage('assets/images/logo_kos.png'),
+                    radius: 20,
+                  ),
+                  SizedBox(width: 12),
+                  Text(
+                    '${_getGreeting()}, ${_adminProfile?['name'] ?? 'Admin'}!',
+                    style: TextStyle(color: Colors.black),
+                  ),
+                ],
+              ),
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              iconTheme: IconThemeData(color: Colors.black),
+              actions: [
+                IconButton(
+                  icon: Icon(Icons.notifications),
+                  onPressed: () {
+                    print('Notifikasi ditekan');
+                  },
                 ),
               ],
             ),
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            iconTheme: IconThemeData(color: Colors.black),
-            actions: [
-              IconButton(
-                icon: Icon(Icons.notifications),
-                onPressed: () {
-                  print('Notifikasi ditekan');
-                },
-              ),
-            ],
           ),
         ),
-      ),
-      body: _isLoading
-          ? DashboardSkeleton()
-          : IndexedStack(
-              index: _selectedIndex,
-              children: _screens,
-            ),
-      bottomNavigationBar: CustomBottomNavBar(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        backgroundColor: Color(0xFFE7B789),
+        body: _isLoading
+            ? DashboardSkeleton()
+            : IndexedStack(
+                index: _selectedIndex,
+                children: _screens,
+              ),
+        bottomNavigationBar: CustomBottomNavBar(
+          currentIndex: _selectedIndex,
+          onTap: _onItemTapped,
+          backgroundColor: Color(0xFFE7B789),
+        ),
       ),
     );
   }
@@ -315,10 +350,14 @@ class _AdminDashboardContentState extends State<AdminDashboardContent> {
                     _buildMenuCard(
                       imagePath: 'assets/images/dashboard_icon/kelola_kamar.png',
                       label: 'Kelola\nKamar',
-                      onTap: () {
-                        Navigator.of(context).push(
+                      onTap: () async {
+                        final result = await Navigator.push(
+                          context,
                           MaterialPageRoute(builder: (context) => KelolaKamarPage()),
                         );
+                        if (result == true) {
+                          widget.onRefresh(); // Refresh dashboard after returning
+                        }
                       },
                     ),
                     _buildMenuCard(
@@ -465,4 +504,4 @@ class _AdminDashboardContentState extends State<AdminDashboardContent> {
       ),
     );
   }
-} 
+}

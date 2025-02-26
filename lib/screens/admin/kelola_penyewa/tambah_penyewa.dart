@@ -164,7 +164,6 @@ class _TambahPenyewaPageState extends State<TambahPenyewaPage> {
     setState(() => _isLoading = true);
 
     try {
-      // Parse tanggal masuk ke format yang sesuai
       final DateTime parsedDate = DateFormat('yyyy-MM-dd').parse(_tanggalMasukController.text);
       
       final PenyewaService _penyewaService = PenyewaService();
@@ -182,17 +181,19 @@ class _TambahPenyewaPageState extends State<TambahPenyewaPage> {
         hargaSewa: selectedHarga
       );
 
-      // Jika berhasil menambahkan penyewa, catat pemasukan
-      if (response != null) {
+      // Record income after successfully adding tenant
+      if (response != null && response['data'] != null) {
         final PemasukanPengeluaranService _pemasukanService = PemasukanPengeluaranService();
-        await _pemasukanService.create(
-          jenisTransaksi: 'pemasukan',
-          kategori: 'Pembayaran Sewa',
-          tanggal: parsedDate,
-          jumlah: selectedHarga,
-          keterangan: 'Pembayaran sewa kamar ${widget.nomorKamar} - ${_namaController.text} (${selectedDurasi} bulan)',
-          idPenyewa: response['data']['id_penyewa'],
-        );
+       await _pemasukanService.create(
+        jenisTransaksi: 'pemasukan',
+        kategori: 'Pembayaran Sewa',
+        tanggal: parsedDate,
+        jumlah: selectedHarga,
+        keterangan: 'Pembayaran sewa kamar ${widget.nomorKamar} - ${_namaController.text} (${selectedDurasi} bulan)',
+        idPenyewa: response['data']['id_penyewa'],
+        metodePembayaran: 'Dibayar', // This will map to ID 1
+        idUser: response['data']['id_user'],
+);
       }
 
       Navigator.pop(context, true);
@@ -491,4 +492,4 @@ class _TambahPenyewaPageState extends State<TambahPenyewaPage> {
     _nikController.dispose();
     super.dispose();
   }
-} 
+}
