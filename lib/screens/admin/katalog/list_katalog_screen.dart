@@ -87,123 +87,212 @@ class _ListKatalogScreenState extends State<ListKatalogScreen> {
         actions: [
           IconButton(
             icon: Icon(Icons.info_outline),
-            onPressed: () {
-              // Tambahkan fungsi info jika diperlukan
-            },
+            onPressed: () {},
           ),
         ],
       ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
-          : GridView.builder(
-              padding: EdgeInsets.all(16),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                childAspectRatio: 0.8,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-              ),
-              itemCount: _katalogList.length,
-              itemBuilder: (context, index) {
-                final item = _katalogList[index];
-                return Card(
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+          : _katalogList.isEmpty
+              ? Center(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.vertical(
-                              top: Radius.circular(12),
-                            ),
-                            image: DecorationImage(
-                              image: NetworkImage(
-                                _service.getImageUrl(item['foto_makanan']),
-                              ),
-                              fit: BoxFit.cover,
-                            ),
-                          ),
+                      Icon(
+                        widget.kategori.toLowerCase() == 'makanan' 
+                            ? Icons.restaurant_menu 
+                            : Icons.local_drink,
+                        size: 64,
+                        color: Colors.grey[400],
+                      ),
+                      SizedBox(height: 16),
+                      Text(
+                        'Belum menambahkan menu ${widget.kategori.toLowerCase()}',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                      Padding(
-                        padding: EdgeInsets.all(8),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              item['nama_makanan'],
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                              ),
-                            ),
-                            Text(
-                              'Status: ${item['status']}',
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 12,
-                              ),
-                            ),
-                            Text(
-                              NumberFormat.currency(
-                                locale: 'id_ID',
-                                symbol: 'Rp ',
-                                decimalDigits: 0,
-                              ).format(double.parse(item['harga'].toString())),
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                              ),
-                            ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                ElevatedButton(
-                                  onPressed: () => _hapusItem(item['id_makanan']),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.red,
-                                    minimumSize: Size(60, 30),
-                                  ),
-                                  child: Text(
-                                    'Hapus',
-                                    style: TextStyle(fontSize: 12),
-                                  ),
-                                ),
-                                ElevatedButton(
-                                  onPressed: () async {
-                                    final result = await Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => UbahMenuScreen(menu: item),
-                                      ),
-                                    );
-                                    if (result == true) {
-                                      _loadKatalog();
-                                    }
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Color(0xFFE7B789),
-                                    minimumSize: Size(60, 30),
-                                  ),
-                                  child: Text(
-                                    'Ubah',
-                                    style: TextStyle(fontSize: 12),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
+                      SizedBox(height: 8),
+                      Text(
+                        'Tambahkan menu ${widget.kategori.toLowerCase()} baru',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[400],
                         ),
                       ),
                     ],
                   ),
-                );
-              },
-            ),
+                )
+              : GridView.builder(
+                  padding: EdgeInsets.all(16),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    childAspectRatio: 0.75, // Adjusted ratio
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                  ),
+                  itemCount: _katalogList.length,
+                  itemBuilder: (context, index) {
+                    final item = _katalogList[index];
+                    return Card(
+                      elevation: 4,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.vertical(
+                                  top: Radius.circular(12),
+                                ),
+                                image: DecorationImage(
+                                  image: NetworkImage(
+                                    _service.getImageUrl(item['foto_makanan']),
+                                  ),
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                          ),
+                          Padding(
+                            padding: EdgeInsets.all(8),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  item['nama_makanan'],
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                SizedBox(height: 4),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Row(
+                                        children: [
+                                          Container(
+                                            height: 8,
+                                            width: 8,
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              color: item['status'] == 'tersedia' ? Colors.green : Colors.red,
+                                            ),
+                                          ),
+                                          SizedBox(width: 4),
+                                          Expanded(
+                                            child: Text(
+                                              item['status'].toString().replaceAll('_', ' '),
+                                              style: TextStyle(
+                                                color: Colors.grey[600],
+                                                fontSize: 11,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      'Stok: ${item['stock'] ?? 0}',
+                                      style: TextStyle(
+                                        color: Colors.grey[600],
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  NumberFormat.currency(
+                                    locale: 'id_ID',
+                                    symbol: 'Rp ',
+                                    decimalDigits: 0,
+                                  ).format(double.parse(item['harga'].toString())),
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                SizedBox(height: 8),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                  children: [
+                                    _buildActionButton(
+                                      onPressed: () => _hapusItem(item['id_makanan']),
+                                      icon: Icons.delete_outline,
+                                      label: 'Hapus',
+                                      color: Colors.red,
+                                    ),
+                                    _buildActionButton(
+                                      onPressed: () async {
+                                        final result = await Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => UbahMenuScreen(menu: item),
+                                          ),
+                                        );
+                                        if (result == true) _loadKatalog();
+                                      },
+                                      icon: Icons.edit_outlined,
+                                      label: 'Ubah',
+                                      color: Color(0xFFE7B789),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
     );
   }
-} 
+
+  // Add this new widget for compact action buttons
+  Widget _buildActionButton({
+    required VoidCallback onPressed,
+    required IconData icon,
+    required String label,
+    required Color color,
+  }) {
+    return Container(
+      width: 50, // Smaller fixed width
+      height: 45, // Fixed height
+      child: Material(
+        color: color,
+        borderRadius: BorderRadius.circular(8),
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(8),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: Colors.white, size: 16),
+              SizedBox(height: 2),
+              Text(
+                label,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

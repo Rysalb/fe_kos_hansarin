@@ -220,13 +220,14 @@ class _KelolaKatalogScreenState extends State<KelolaKatalogScreen> {
       }
 
       try {
-        await _service.create(
-          nama: _namaController.text,
-          harga: double.parse(_hargaController.text),
-          kategori: _selectedKategori,
-          deskripsi: '', // Bisa ditambahkan field deskripsi jika diperlukan
-          fotoMakanan: _fotoMakanan!,
-          status: 'tersedia',
+       await _service.create(
+        nama: _namaController.text,
+        harga: double.parse(_hargaController.text),
+        kategori: _selectedKategori,
+        deskripsi: '', // Bisa ditambahkan field deskripsi jika diperlukan
+        fotoMakanan: _fotoMakanan!,
+        stock: int.parse(_stockController.text), // Add stock parameter
+        status: 'tersedia',
         );
         
         Navigator.pop(context, true);

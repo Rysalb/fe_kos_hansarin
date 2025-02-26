@@ -29,6 +29,7 @@ class KatalogMakananService {
     required String kategori,
     required String deskripsi,
     required File fotoMakanan,
+    required int stock,  // Add stock parameter
     required String status,
   }) async {
     try {
@@ -42,6 +43,7 @@ class KatalogMakananService {
         'harga': harga.toString(),
         'kategori': kategori,
         'deskripsi': deskripsi,
+        'stock': stock.toString(),  // Add stock field
         'status': status,
       });
 
@@ -68,6 +70,7 @@ class KatalogMakananService {
     required String kategori,
     required String deskripsi,
     File? fotoMakanan,
+    required int stock,  // Add stock parameter
     required String status,
   }) async {
     try {
@@ -81,6 +84,7 @@ class KatalogMakananService {
         'harga': harga.toString(),
         'kategori': kategori,
         'deskripsi': deskripsi,
+        'stock': stock.toString(),  // Add stock field
         'status': status,
         '_method': 'PUT',
       });
@@ -100,8 +104,11 @@ class KatalogMakananService {
         throw Exception('Gagal mengupdate menu: $responseStr');
       }
     } catch (e) {
+      print('$e');
       throw Exception('Error: $e');
+     
     }
+    
   }
 
   Future<void> delete(int id) async {
@@ -114,6 +121,7 @@ class KatalogMakananService {
         throw Exception('Gagal menghapus katalog makanan');
       }
     } catch (e) {
+      
       throw Exception('Error: $e');
     }
   }

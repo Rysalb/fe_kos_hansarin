@@ -212,13 +212,14 @@ class _UbahMenuScreenState extends State<UbahMenuScreen> {
     if (_formKey.currentState!.validate()) {
       try {
         await _service.update(
-          id: widget.menu['id_makanan'],
-          nama: _namaController.text,
-          harga: double.parse(_hargaController.text),
-          kategori: _selectedKategori,
-          deskripsi: '',
-          fotoMakanan: _fotoMakanan,
-          status: _selectedStatus,
+        id: widget.menu['id_makanan'],
+        nama: _namaController.text,
+        harga: double.parse(_hargaController.text),
+        kategori: _selectedKategori,
+        deskripsi: '',
+        fotoMakanan: _fotoMakanan,
+        stock: int.parse(_stockController.text), // Add stock parameter
+        status: _selectedStatus,
         );
         
         Navigator.pop(context, true);
