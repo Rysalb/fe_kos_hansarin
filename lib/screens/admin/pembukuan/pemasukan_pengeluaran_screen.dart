@@ -443,13 +443,14 @@ class _PemasukanPengeluaranScreenState extends State<PemasukanPengeluaranScreen>
         final isIncome = transaksi['jenis_transaksi'] == 'pemasukan';
         final jumlah = double.parse(transaksi['jumlah'].toString());
         
-        // Check if transaction is Pembayaran Sewa based on kategori only
-        final isFromPayment = transaksi['kategori'] == 'Pembayaran Sewa' || transaksi['kategori'] == 'pembayaran_sewa';
+        // Check for both Order Menu and Pembayaran Sewa
+        final isOrderMenu = transaksi['kategori'] == 'Order Menu';
+        final isSewa = transaksi['kategori'] == 'Pembayaran Sewa';
+        final isFromPayment = isOrderMenu || isSewa;
         
         return GestureDetector(
           onTap: () async {
             if (isFromPayment) {
-              // Show Kwitansi for rent payments
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -462,7 +463,7 @@ class _PemasukanPengeluaranScreenState extends State<PemasukanPengeluaranScreen>
                       'keterangan': transaksi['keterangan'] ?? '',
                       'status': transaksi['status_verifikasi'] ?? 'verified',
                       'nama_penyewa': transaksi['penyewa']?['user']?['name'] ?? 'Tidak diketahui',
-                      'nomor_kamar': transaksi['penyewa']?['unit_kamar']?['nomor_kamar'] ?? '-',
+                      'nomor_kamar': isOrderMenu ? 'Order Menu' : (transaksi['penyewa']?['unit_kamar']?['nomor_kamar'] ?? '-'),
                     },
                   ),
                 ),
@@ -487,7 +488,11 @@ class _PemasukanPengeluaranScreenState extends State<PemasukanPengeluaranScreen>
             margin: EdgeInsets.only(bottom: 8),
             child: ListTile(
               leading: Image.asset(
-                isIncome ? 'assets/images/pemasukan.png' : 'assets/images/pengeluaran.png',
+                isIncome 
+                    ? isOrderMenu 
+                        ? 'assets/images/pesanmakan.png'
+                        : 'assets/images/pemasukan.png'
+                    : 'assets/images/pengeluaran.png',
                 width: 50,
                 height: 50,
               ),
@@ -520,10 +525,12 @@ class _PemasukanPengeluaranScreenState extends State<PemasukanPengeluaranScreen>
                       'Metode: ${transaksi['metode_pembayaran']?['nama_metode'] ?? 'Tidak diketahui'}',
                       style: TextStyle(fontSize: 12),
                     ),
-                    Text(
-                      'Kamar: ${transaksi['penyewa']?['unit_kamar']?['nomor_kamar'] ?? '-'}',
-                      style: TextStyle(fontSize: 12),
-                    ),
+                    if (!isOrderMenu) ...[
+                      Text(
+                        'Kamar: ${transaksi['penyewa']?['unit_kamar']?['nomor_kamar'] ?? '-'}',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                    ],
                     Text(
                       'Penyewa: ${transaksi['penyewa']?['user']?['name'] ?? 'Tidak diketahui'}',
                       style: TextStyle(fontSize: 12),

@@ -25,13 +25,34 @@ class _VerifikasiPembayaranScreenState extends State<VerifikasiPembayaranScreen>
     try {
       final data = await _service.getAll();
       setState(() {
-        _pembayaranList = List<Map<String, dynamic>>.from(
-          data.where((item) => item['status_verifikasi'] == 'pending')
-        );
+        _pembayaranList = data.where((item) {
+          // Add null checks for nested properties
+          final statusVerifikasi = item['status_verifikasi'];
+          final penyewa = item['penyewa'];
+          final user = penyewa?['user'];
+          final unitKamar = penyewa?['unit_kamar'];
+          final metodePembayaran = item['metode_pembayaran'];
+
+          // Check if required data exists
+          if (statusVerifikasi == null || 
+              penyewa == null || 
+              user == null || 
+              unitKamar == null || 
+              metodePembayaran == null) {
+            print('Missing required data for item: $item');
+            return false;
+          }
+
+          return statusVerifikasi == 'pending';
+        }).toList();
       });
     } catch (e) {
+      print('Error loading payments: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal memuat data pembayaran')),
+        SnackBar(
+          content: Text('Gagal memuat data pembayaran: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
       );
     } finally {
       setState(() => _isLoading = false);
@@ -65,68 +86,102 @@ class _VerifikasiPembayaranScreenState extends State<VerifikasiPembayaranScreen>
       decimalDigits: 0,
     );
 
-    double jumlah = double.tryParse(pembayaran['jumlah_pembayaran'].toString()) ?? 0.0;
+    // Fix number parsing
+    double jumlah = 0.0;
+    try {
+      if (pembayaran['jumlah_pembayaran'] != null) {
+        if (pembayaran['jumlah_pembayaran'] is num) {
+          jumlah = (pembayaran['jumlah_pembayaran'] as num).toDouble();
+        } else {
+          jumlah = double.tryParse(pembayaran['jumlah_pembayaran'].toString()) ?? 0.0;
+        }
+      }
+    } catch (e) {
+      print('Error parsing jumlah_pembayaran: $e');
+    }
 
     String imageUrl = _service.getImageUrl(pembayaran['bukti_pembayaran']);
+    bool isOrderMenu = pembayaran['keterangan'] == 'Order Menu';
 
     showDialog(
       context: context,
       builder: (context) => Dialog(
         child: Container(
           padding: EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              GestureDetector(
-                onTap: () => _showFullImage(imageUrl),
-                child: Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    image: DecorationImage(
-                      image: NetworkImage(imageUrl),
-                      fit: BoxFit.cover,
-                      onError: (_, __) {
-                        print('Error loading image');
-                      },
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                GestureDetector(
+                  onTap: () => _showFullImage(imageUrl),
+                  child: Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      image: DecorationImage(
+                        image: NetworkImage(imageUrl),
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              SizedBox(height: 16),
-              Center(
-                child: Text(
-                  formatter.format(jumlah),
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+                SizedBox(height: 16),
+                Center(
+                  child: Text(
+                    formatter.format(jumlah),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                 ),
-              ),
-              SizedBox(height: 16),
-              _buildDetailRow('Kategori', pembayaran['jenis_pembayaran'] ?? 'Bayar Sewa Kamar'),
-              _buildDetailRow('No Pesanan', pembayaran['id_pembayaran']?.toString()?.padLeft(6, '0') ?? 'N/A'),
-              _buildDetailRow(
-                'Via Pembayaran', 
-                pembayaran['metode_pembayaran']?['nama'] ?? 'Tidak diketahui'
-              ),
-              _buildDetailRow('Tanggal Bayar', 
-                DateFormat('dd MMMM yyyy').format(DateTime.parse(pembayaran['tanggal_pembayaran'] ?? DateTime.now().toString()))
-              ),
-              SizedBox(height: 16),
-              Center(
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text('Kembali'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFFE7B789),
-                    minimumSize: Size(double.infinity, 40),
+                SizedBox(height: 16),
+                _buildDetailRow('Kategori', isOrderMenu ? 'Order Menu' : 'Bayar Sewa Kamar'),
+                _buildDetailRow('No Pesanan', pembayaran['id_pembayaran']?.toString()?.padLeft(6, '0') ?? 'N/A'),
+                _buildDetailRow('Via Pembayaran', pembayaran['metode_pembayaran']?['nama'] ?? 'Tidak diketahui'),
+                _buildDetailRow('Tanggal Bayar', DateFormat('dd MMMM yyyy').format(DateTime.parse(pembayaran['tanggal_pembayaran']))),
+                if (!isOrderMenu) ...[
+                  _buildDetailRow('Kamar', penyewa['unit_kamar']['nomor_kamar']),
+                  _buildDetailRow('Periode', '${penyewa['tanggal_masuk']} - ${penyewa['tanggal_keluar']}'),
+                ],
+                if (isOrderMenu && pembayaran['pesanan_makanan'] != null) ...[
+                  SizedBox(height: 16),
+                  Text(
+                    'Detail Pesanan:',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  ...pembayaran['pesanan_makanan'].map<Widget>((pesanan) {
+                    double totalHarga = 0.0;
+                    try {
+                      if (pesanan['total_harga'] != null) {
+                        if (pesanan['total_harga'] is num) {
+                          totalHarga = (pesanan['total_harga'] as num).toDouble();
+                        } else {
+                          totalHarga = double.tryParse(pesanan['total_harga'].toString()) ?? 0.0;
+                        }
+                      }
+                    } catch (e) {
+                      print('Error parsing total_harga: $e');
+                    }
+                    
+                    return Text(
+                      '${pesanan['jumlah']}x ${pesanan['katalog_makanan']['nama_makanan']} ' +
+                      '(${formatter.format(totalHarga)})'
+                    );
+                  }).toList(),
+                ],
+                SizedBox(height: 16),
+                Center(
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text('Kembali'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFFE7B789),
+                      minimumSize: Size(double.infinity, 40),
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -203,14 +258,15 @@ class _VerifikasiPembayaranScreenState extends State<VerifikasiPembayaranScreen>
     if (result == true) {
       try {
         double jumlahPembayaran = double.parse(pembayaran['jumlah_pembayaran'].toString());
+        String originalKeterangan = pembayaran['keterangan'] ?? '';
         
         await _service.verifikasi(
           idPembayaran: pembayaran['id_pembayaran'],
           statusVerifikasi: 'verified',
-          keterangan: 'Pembayaran diverifikasi',
+          keterangan: originalKeterangan, // Keep original keterangan
           jumlahPembayaran: jumlahPembayaran,
         );
-        
+
         await _loadPembayaran();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Pembayaran berhasil diverifikasi')),
@@ -282,6 +338,87 @@ class _VerifikasiPembayaranScreenState extends State<VerifikasiPembayaranScreen>
     }
   }
 
+  Widget _buildPembayaranItem(Map<String, dynamic> pembayaran) {
+    final bool isOrderMenu = pembayaran['keterangan'] == 'Order Menu';
+    final penyewa = pembayaran['penyewa'];
+    final user = penyewa?['user'];
+    final unitKamar = penyewa?['unit_kamar'];
+    final metodePembayaran = pembayaran['metode_pembayaran'];
+    
+    return Card(
+      margin: EdgeInsets.only(bottom: 16),
+      color: Color(0xFFFBE1CE),
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Image.asset(
+                  isOrderMenu ? 'assets/images/pesanmakan.png' : 'assets/images/avatar.png',
+                  width: 60,
+                  height: 60,
+                ),
+                SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isOrderMenu ? 'Order Menu' : 'Kamar ${unitKamar?['nomor_kamar'] ?? 'N/A'}',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(isOrderMenu ? 'Pembayaran Makanan/Minuman' : 'Pembayaran Sewa Kamar'),
+                      SizedBox(height: 8),
+                      Text('Nama: ${user?['name'] ?? 'N/A'}'),
+                      Text('No HP: ${penyewa?['nomor_wa'] ?? 'N/A'}'),
+                      Text('Pembayaran Melalui: ${metodePembayaran?['nama'] ?? 'N/A'}'),
+                      Text('Total: Rp ${pembayaran['jumlah_pembayaran'] ?? '0'}'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton(
+                  onPressed: () => _showTolakConfirmation(pembayaran['id_pembayaran']),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    padding: EdgeInsets.symmetric(horizontal: 24),
+                  ),
+                  child: Text('Tolak'),
+                ),
+                ElevatedButton(
+                  onPressed: () => _showDetailPembayaran(pembayaran),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFF4A2F1C),
+                    padding: EdgeInsets.symmetric(horizontal: 24),
+                  ),
+                  child: Text('Detail'),
+                ),
+                ElevatedButton(
+                  onPressed: () => _showVerifikasiConfirmation(pembayaran),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    padding: EdgeInsets.symmetric(horizontal: 24),
+                  ),
+                  child: Text('Verifikasi'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -319,82 +456,7 @@ class _VerifikasiPembayaranScreenState extends State<VerifikasiPembayaranScreen>
                   itemCount: _pembayaranList.length,
                   itemBuilder: (context, index) {
                     final pembayaran = _pembayaranList[index];
-                    final penyewa = pembayaran['penyewa'];
-                    
-                    return Card(
-                      margin: EdgeInsets.only(bottom: 16),
-                      color: Color(0xFFFBE1CE),
-                      child: Padding(
-                        padding: EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Image.asset(
-                                  'assets/images/avatar.png',
-                                  width: 60,
-                                  height: 60,
-                                ),
-                                SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Kamar ${penyewa['unit_kamar']['nomor_kamar']}',
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      Text(pembayaran['jenis_pembayaran'] ?? 'Bayar Sewa Kamar'),
-                                      SizedBox(height: 8),
-                                      Text('Nama: ${penyewa['user']['name']}'),
-                                      Text('Asal: ${penyewa['alamat_asal']}'),
-                                      Text('Tanggal Masuk: ${DateFormat('dd MMM yyyy').format(DateTime.parse(penyewa['tanggal_masuk']))}'),
-                                      Text('Tanggal Keluar: ${DateFormat('dd MMM yyyy').format(DateTime.parse(penyewa['tanggal_keluar']))}'),
-                                      Text('No HP: ${penyewa['nomor_wa']}'),
-                                      Text('Pembayaran Melalui: ${pembayaran['metode_pembayaran']['nama']}'),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 16),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                ElevatedButton(
-                                  onPressed: () => _showTolakConfirmation(pembayaran['id_pembayaran']),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.red,
-                                    padding: EdgeInsets.symmetric(horizontal: 24),
-                                  ),
-                                  child: Text('Tolak'),
-                                ),
-                                ElevatedButton(
-                                  onPressed: () => _showDetailPembayaran(pembayaran),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Color(0xFF4A2F1C),
-                                    padding: EdgeInsets.symmetric(horizontal: 24),
-                                  ),
-                                  child: Text('Detail'),
-                                ),
-                                ElevatedButton(
-                                  onPressed: () => _showVerifikasiConfirmation(pembayaran), // Pass the whole pembayaran object
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.green,
-                                    padding: EdgeInsets.symmetric(horizontal: 24),
-                                  ),
-                                  child: Text('Verifikasi'),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
+                    return _buildPembayaranItem(pembayaran);
                   },
                 ),
     );

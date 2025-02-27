@@ -18,8 +18,12 @@ class PembayaranService {
       print('Response body: ${response.body}');
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        return List<Map<String, dynamic>>.from(data);
+        final Map<String, dynamic> responseData = json.decode(response.body);
+        if (responseData['status'] == true && responseData['data'] != null) {
+          // Convert the data to List<Map<String, dynamic>>
+          return List<Map<String, dynamic>>.from(responseData['data']);
+        }
+        return [];
       } else {
         throw Exception('Gagal memuat data pembayaran: ${response.body}');
       }
@@ -146,6 +150,84 @@ class PembayaranService {
       throw Exception('Gagal upload bukti pembayaran: $e');
     }
   }
+
+Future<Map<String, dynamic>> uploadBuktiPembayaranOrder({
+  required String metodePembayaranId,
+  required File buktiPembayaran,
+  required String jumlahPembayaran,
+  required String keterangan,
+  required List<Map<String, dynamic>> pesanan,
+  required int idPenyewa,
+}) async {
+  try {
+    final token = await getToken();
+    if (token == null) throw Exception('Token tidak ditemukan');
+
+    // First create payment record
+    var request = http.MultipartRequest(
+      'POST',
+      Uri.parse('${ApiConstants.baseUrl}/pembayaran/upload'),
+    );
+
+    request.headers.addAll({
+      'Authorization': 'Bearer $token',
+      'Accept': 'application/json',
+    });
+
+    request.fields.addAll({
+      'metode_pembayaran_id': metodePembayaranId,
+      'jumlah_pembayaran': jumlahPembayaran,
+      'keterangan': keterangan,
+      'id_penyewa': idPenyewa.toString(),
+    });
+
+    request.files.add(await http.MultipartFile.fromPath(
+      'bukti_pembayaran',
+      buktiPembayaran.path,
+    ));
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+
+    print('Payment Response: ${response.statusCode}');
+    print('Payment Body: ${response.body}');
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to upload payment proof');
+    }
+
+    final responseData = json.decode(response.body);
+    final idPembayaran = responseData['data']['id_pembayaran'];
+
+    // Then create food order
+    final orderResponse = await http.post(
+      Uri.parse('${ApiConstants.baseUrl}/pesanan-makanan/create'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'id_penyewa': idPenyewa,
+        'id_pembayaran': idPembayaran,
+        'pesanan': pesanan,
+        'total_harga': double.parse(jumlahPembayaran), // Add this field
+      }),
+    );
+
+    print('Order Response: ${orderResponse.statusCode}');
+    print('Order Body: ${orderResponse.body}');
+
+    if (orderResponse.statusCode != 201) {
+      throw Exception('Failed to create order');
+    }
+
+    return responseData;
+  } catch (e) {
+    print('Upload error: $e');
+    throw Exception('Error: $e');
+  }
+}
 
   Future<List<Map<String, dynamic>>> getHistoriPembayaran({required String year}) async {
     try {

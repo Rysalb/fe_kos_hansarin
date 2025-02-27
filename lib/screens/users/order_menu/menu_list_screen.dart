@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:proyekkos/data/services/katalog_makanan_service.dart';
+import 'package:proyekkos/screens/users/order_menu/cart_screen.dart';
+import 'package:proyekkos/data/models/cart_item.dart';
+import 'package:proyekkos/data/services/cart_service.dart';
 import 'package:intl/intl.dart';
 
 class MenuListScreen extends StatefulWidget {
@@ -17,6 +20,7 @@ class MenuListScreen extends StatefulWidget {
 
 class _MenuListScreenState extends State<MenuListScreen> {
   final KatalogMakananService _service = KatalogMakananService();
+  final CartService _cartService = CartService();
   bool _isLoading = true;
   List<Map<String, dynamic>> _menuList = [];
 
@@ -32,7 +36,6 @@ class _MenuListScreenState extends State<MenuListScreen> {
       if (mounted) {
         setState(() {
           _menuList = data.map((item) {
-            // Convert harga from String to double/int
             var harga = 0;
             if (item['harga'] != null) {
               if (item['harga'] is String) {
@@ -45,9 +48,10 @@ class _MenuListScreenState extends State<MenuListScreen> {
             return {
               'foto_makanan': item['foto_makanan'] ?? '',
               'nama_makanan': item['nama_makanan'] ?? '',
-              'harga': harga,  // Store as number
+              'harga': harga,
               'id_makanan': item['id_makanan'] ?? 0,
               'status': item['status'] ?? 'tidak_tersedia',
+              'stock': item['stock'] ?? 0, // Add stock information
             };
           }).toList();
           _isLoading = false;
@@ -62,6 +66,26 @@ class _MenuListScreenState extends State<MenuListScreen> {
         );
       }
     }
+  }
+
+  void _showImagePreview(BuildContext context, String imageUrl) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          child: Container(
+            width: double.infinity,
+            height: 300,
+            decoration: BoxDecoration(
+              image: DecorationImage(
+                image: NetworkImage(imageUrl),
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -86,6 +110,12 @@ class _MenuListScreenState extends State<MenuListScreen> {
             ),
             onPressed: () {
               // Navigate to cart
+               Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CartScreen(),
+          ),
+        );
             },
           ),
         ],
@@ -103,7 +133,7 @@ class _MenuListScreenState extends State<MenuListScreen> {
                   padding: EdgeInsets.all(16),
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
-                    childAspectRatio: 0.8,
+                    childAspectRatio: 0.7, // Adjusted from 0.8 to 0.7 to give more height
                     crossAxisSpacing: 16,
                     mainAxisSpacing: 16,
                   ),
@@ -115,69 +145,129 @@ class _MenuListScreenState extends State<MenuListScreen> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Image.network(
-                            _service.getImageUrl(menu['foto_makanan']), // Gunakan helper method untuk URL gambar
-                            height: 80,
-                            width: 80,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Image.asset(
-                                'assets/images/pesanmakan.png',
-                                height: 80,
-                                width: 80,
-                              );
-                            },
-                          ),
-                          SizedBox(height: 8),
-                          Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 8),
-                            child: Text(
-                              menu['nama_makanan'] ?? '', // Sesuaikan dengan nama field yang benar
+                      child: Padding(
+                        padding: EdgeInsets.all(6),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            GestureDetector(
+                              onTap: () => _showImagePreview(
+                                context, 
+                                _service.getImageUrl(menu['foto_makanan'])
+                              ),
+                              child: Image.network(
+                                _service.getImageUrl(menu['foto_makanan']),
+                                height: 100,
+                                width: 100,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Image.asset(
+                                    'assets/images/pesanmakan.png',
+                                    height: 100,
+                                    width: 100,
+                                  );
+                                },
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 2),
+                              child: Text(
+                                menu['nama_makanan'] ?? '',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.center,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              NumberFormat.currency(
+                                locale: 'id_ID',
+                                symbol: 'Rp ',
+                                decimalDigits: 0,
+                              ).format(menu['harga'] as num),
                               style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              textAlign: TextAlign.center,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            NumberFormat.currency(
-                              locale: 'id_ID',
-                              symbol: 'Rp ',
-                              decimalDigits: 0,
-                            ).format(menu['harga'] as num), // Cast to num type
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          ElevatedButton(
-                            onPressed: () {
-                              // Add to cart logic
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Color(0xFF7FFF00),
-                              minimumSize: Size(100, 30),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
+                                fontSize: 11,
+                                color: Colors.grey[600],
                               ),
                             ),
-                            child: Text(
-                              'Beli',
+                            SizedBox(height: 2),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  height: 6,
+                                  width: 6,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: menu['status'] == 'tersedia' ? Colors.green : Colors.red,
+                                  ),
+                                ),
+                                SizedBox(width: 3),
+                                Text(
+                                  menu['status'].toString().replaceAll('_', ' '),
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Text(
+                              'Stok: ${menu['stock'] ?? 0}',
                               style: TextStyle(
-                                color: Colors.black,
-                                fontSize: 12,
+                                fontSize: 10,
+                                color: Colors.grey[600],
                               ),
                             ),
-                          ),
-                        ],
+                            SizedBox(height: 4),
+                            Expanded(
+                              child: Align(
+                                alignment: Alignment.bottomCenter,
+                                child: SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton(
+                                    onPressed: () {
+                                      // Add to cart logic
+                                        _cartService.addItem(
+      CartItem(
+        idMakanan: menu['id_makanan'],
+        namaMakanan: menu['nama_makanan'],
+        fotoMakanan: menu['foto_makanan'],
+        harga: menu['harga'],
+      ),
+    );
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Berhasil ditambahkan ke keranjang'),
+        duration: Duration(seconds: 1),
+      ),
+    );
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Color(0xFF7FFF00),
+                                      padding: EdgeInsets.symmetric(vertical: 6),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      'Beli',
+                                      style: TextStyle(
+                                        color: Colors.black,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   },

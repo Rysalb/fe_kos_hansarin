@@ -69,8 +69,9 @@ class _NomorPentingScreenState extends State<NomorPentingScreen> {
           : _nomorPenting.isEmpty
               ? Center(
                   child: Text(
-                    'Belum ada nomor penting yang dibuat',
-                    style: TextStyle(fontSize: 16),
+                    'Belum ada nomor penting yang dibuat \n oleh pengelola kos',
+                    style: TextStyle(fontSize: 16 ),
+                    textAlign: TextAlign.center,
                   ),
                 )
               : ListView.builder(

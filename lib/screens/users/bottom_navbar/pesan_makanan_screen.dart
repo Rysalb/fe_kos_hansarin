@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:proyekkos/screens/users/order_menu/cart_screen.dart';
 import 'package:proyekkos/screens/users/order_menu/menu_list_screen.dart';
 
 class PesanMakananScreen extends StatelessWidget {
@@ -16,16 +17,32 @@ class PesanMakananScreen extends StatelessWidget {
                 Spacer(),
                 Row(
                   children: [
-                    Image.asset(
-                      'assets/images/dashboard_icon/verifikasi_pembayaran.png',
-                      width: 50,
-                      height: 50,
+                    GestureDetector(
+                      onTap: () {
+                     
+                      },
+                      child: Image.asset(
+                        'assets/images/dashboard_icon/verifikasi_pembayaran.png',
+                        width: 50,
+                        height: 50,
+                      ),
                     ),
                     SizedBox(width: 16),
-                    Image.asset(
-                      'assets/images/troli.png',
-                      width: 50,
-                      height: 50,
+                    GestureDetector(
+                      onTap: () {
+                          // Navigate to cart
+               Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CartScreen(),
+          ),
+        );
+                      },
+                      child: Image.asset(
+                        'assets/images/troli.png',
+                        width: 50,
+                        height: 50,
+                      ),
                     ),
                   ],
                 ),
@@ -121,4 +138,4 @@ class PesanMakananScreen extends StatelessWidget {
       ),
     );
   }
-} 
+}

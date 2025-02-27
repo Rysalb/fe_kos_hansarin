@@ -172,6 +172,71 @@ class _HistoriPembayaranScreenState extends State<HistoriPembayaranScreen> {
     );
   }
 
+  Widget _buildListItem(Map<String, dynamic> pembayaran) {
+    final tanggal = DateFormat('dd-MM-yyyy').format(
+      DateTime.parse(pembayaran['tanggal_pembayaran']?.toString() ?? DateTime.now().toString())
+    );
+    
+    // Check if it's an order menu or rent payment
+    final bool isOrderMenu = pembayaran['keterangan'] == 'Order Menu';
+    
+    return Container(
+      margin: EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: _getStatusColor(pembayaran['status']?.toString() ?? ''),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: ListTile(
+        onTap: () => _showPaymentDetail(pembayaran),
+        leading: Image.asset(
+          isOrderMenu ? 'assets/images/pesanmakan.png' : 'assets/images/avatar.png',
+          width: 40,
+          height: 40,
+        ),
+        title: Text(isOrderMenu ? 'Order Menu' : 'Bayar Sewa'),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(tanggal),
+            Text(
+              NumberFormat.currency(
+                locale: 'id_ID',
+                symbol: 'Rp ',
+                decimalDigits: 0,
+              ).format(num.tryParse(pembayaran['jumlah_pembayaran'].toString()) ?? 0),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              pembayaran['status']?.toString() ?? '',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: (pembayaran['status']?.toString()?.toLowerCase() ?? '') == 'ditolak'
+                    ? Colors.red
+                    : Colors.black,
+              ),
+            ),
+            if (isOrderMenu)
+              Text(
+                'Pesanan Makanan',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Colors.grey,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -239,31 +304,7 @@ class _HistoriPembayaranScreenState extends State<HistoriPembayaranScreen> {
                         itemCount: _historiPembayaran.length,
                         itemBuilder: (context, index) {
                           final pembayaran = _historiPembayaran[index];
-                          final tanggal = DateFormat('dd-MM-yyyy').format(
-                            DateTime.parse(pembayaran['tanggal_pembayaran']?.toString() ?? DateTime.now().toString())
-                          );
-                          
-                          return Container(
-                            margin: EdgeInsets.only(bottom: 12),
-                            decoration: BoxDecoration(
-                              color: _getStatusColor(pembayaran['status']?.toString() ?? ''),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: ListTile(
-                              onTap: () => _showPaymentDetail(pembayaran),
-                              title: Text('Bayar Sewa'),
-                              subtitle: Text(tanggal),
-                              trailing: Text(
-                                pembayaran['status']?.toString() ?? '',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: (pembayaran['status']?.toString()?.toLowerCase() ?? '') == 'ditolak'
-                                      ? Colors.red
-                                      : Colors.black,
-                                ),
-                              ),
-                            ),
-                          );
+                          return _buildListItem(pembayaran);
                         },
                       ),
           ),

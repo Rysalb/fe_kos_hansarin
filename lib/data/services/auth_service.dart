@@ -25,27 +25,26 @@ class AuthService {
         }),
       );
 
-      print('Login response status: ${response.statusCode}'); // Debugging
-      print('Login response body: ${response.body}'); // Debugging
-
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(response.body);
-        if (data['token'] != null) {
-          // Simpan token
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('token', data['token']);
-          await prefs.setString('user_role', data['user']['role']);
-          
-          print('Token stored: ${data['token']}'); // Debugging
-          print('Role stored: ${data['user']['role']}'); // Debugging
+      final Map<String, dynamic> data = json.decode(response.body);
+      if (data['token'] != null) {
+        // Save all necessary user data
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('token', data['token']);
+        await prefs.setString('user_role', data['user']['role']);
+        
+        // Save penyewa ID if user is a penyewa
+        if (data['user']['role'] == 'user' && data['penyewa'] != null) {
+          await prefs.setInt('id_penyewa', data['penyewa']['id_penyewa']);
         }
-        return data;
-      } else {
-        final errorData = json.decode(response.body);
-        throw Exception(errorData['message'] ?? 'Login gagal');
+
+        print('Stored user data:'); // Debug prints
+        print('Token: ${data['token']}');
+        print('Role: ${data['user']['role']}');
+        print('Penyewa ID: ${data['penyewa']?['id_penyewa']}');
       }
+      return data;
     } catch (e) {
-      print('Login error: $e'); // Debugging
+      print('Login error: $e');
       throw Exception('Error: $e');
     }
   }

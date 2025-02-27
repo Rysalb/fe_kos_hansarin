@@ -109,22 +109,41 @@ class MetodePembayaranService {
     }
   }
 
-  Future<Map<String, dynamic>> getMetodePembayaranById(int id) async {
-    try {
-      final response = await http.get(
-        Uri.parse('${ApiConstants.baseUrl}/metode-pembayaran/$id'),
-      );
+Future<Map<String, dynamic>> getMetodePembayaranById(int id) async {
+  try {
+    final response = await http.get(
+      Uri.parse('${ApiConstants.baseUrl}/metode-pembayaran/$id'),
+      headers: {'Accept': 'application/json'},
+    );
 
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(response.body);
-        return data['data'];
-      } else {
-        throw Exception('Failed to load metode pembayaran');
+    print('Response status: ${response.statusCode}'); // Debug print
+    print('Response body: ${response.body}'); // Debug print
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> responseData = json.decode(response.body);
+      final data = responseData['data'];
+      
+      // Transform the URLs to include base URL
+      if (data['logo'] != null) {
+        data['logo'] = data['logo'].startsWith('http') 
+          ? data['logo'] 
+          : '${ApiConstants.baseUrlStorage}/storage/${data['logo']}';
       }
-    } catch (e) {
-      throw Exception('Error: $e');
+      if (data['qr_code'] != null) {
+        data['qr_code'] = data['qr_code'].startsWith('http') 
+          ? data['qr_code'] 
+          : '${ApiConstants.baseUrlStorage}/storage/${data['qr_code']}';
+      }
+      
+      return data;
+    } else {
+      throw Exception('Failed to load metode pembayaran');
     }
+  } catch (e) {
+    print('Error detail: $e'); // Debug print
+    throw Exception('Error: $e');
   }
+}
 
   String getImageUrl(String? path) {
     if (path == null || path.isEmpty) return '';
