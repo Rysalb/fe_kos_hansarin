@@ -36,19 +36,17 @@ class _LoginPageState extends State<LoginPage> {
                 Navigator.pushReplacementNamed(context, '/dashboard');
               }
             } catch (e) {
-              Navigator.pushReplacementNamed(context, '/admin/dashboard');
+              print('Navigation error: $e');
             }
           } else if (state is AuthFailure) {
-            try {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(state.error),
-                  backgroundColor: Colors.red,
-                ),
-              );
-            } catch (e) {
-              print('Error showing snackbar: $e');
-            }
+            // Simply show the error message from backend
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.error),
+                backgroundColor: Colors.red,
+                duration: Duration(seconds: 3),
+              ),
+            );
           }
         },
         builder: (context, state) {
@@ -149,6 +147,7 @@ class _LoginPageState extends State<LoginPage> {
                                 : Text(
                                     'LOGIN',
                                     style: TextStyle(
+                                      color: Colors.white,
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,
                                       letterSpacing: 1.2,

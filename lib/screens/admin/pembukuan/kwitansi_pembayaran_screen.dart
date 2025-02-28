@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:gallery_saver/gallery_saver.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'package:pdf/pdf.dart';
@@ -64,24 +63,20 @@ class KwitansiPembayaranScreen extends StatelessWidget {
         ),
       );
 
-      // Get temporary directory and create PDF file
-      final output = await getTemporaryDirectory();
-      final file = File('${output.path}/kwitansi_${DateTime.now().millisecondsSinceEpoch}.pdf');
-      await file.writeAsBytes(await pdf.save());
-
-      // Save PDF directly using sharing
+      // Share PDF using printing package
       await Printing.sharePdf(
-        bytes: await file.readAsBytes(),
+        bytes: await pdf.save(),
         filename: 'kwitansi_${DateTime.now().millisecondsSinceEpoch}.pdf'
       );
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Kwitansi berhasil disimpan')),
+        SnackBar(content: Text('Kwitansi berhasil dibagikan'))
       );
 
     } catch (e) {
+      print('Error sharing PDF: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal menyimpan kwitansi: $e')),
+        SnackBar(content: Text('Gagal membagikan kwitansi'))
       );
     }
   }

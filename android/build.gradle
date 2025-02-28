@@ -1,3 +1,19 @@
+buildscript {
+    ext.kotlin_version = '1.9.10' // Set consistent Kotlin version
+    
+    repositories {
+        google()
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.1.0'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+
+
 allprojects {
     repositories {
         google()
@@ -10,7 +26,9 @@ subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
 }
 subprojects {
-    project.evaluationDependsOn(":app")
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile) {
+kotlinOptions.jvmTarget = "1.8"
+}
 }
 
 tasks.register("clean", Delete) {

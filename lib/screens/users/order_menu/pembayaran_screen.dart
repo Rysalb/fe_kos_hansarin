@@ -3,10 +3,11 @@ import 'package:proyekkos/core/constants/api_constants.dart';
 import 'package:proyekkos/data/services/metode_pembayaran_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import 'package:gallery_saver/gallery_saver.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter/services.dart';
 
 import 'package:proyekkos/screens/users/order_menu/upload_bukti_screen.dart';
 
@@ -32,6 +33,7 @@ class _PembayaranScreenState extends State<PembayaranScreen> {
   Map<String, dynamic>? _metodePembayaran;
   File? _buktiPembayaran;
   final ImagePicker _picker = ImagePicker();
+  static const platform = MethodChannel('com.example.app/scanfile');
 
   @override
   void initState() {
@@ -106,19 +108,48 @@ class _PembayaranScreenState extends State<PembayaranScreen> {
 
   Future<void> _saveQRToGallery(String qrUrl) async {
     try {
-      final response = await http.get(Uri.parse(qrUrl));
-      final tempDir = await getTemporaryDirectory();
-      final file = File('${tempDir.path}/qr_code.png');
-      await file.writeAsBytes(response.bodyBytes);
-      
-      await GallerySaver.saveImage(file.path);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('QR Code berhasil disimpan ke galeri')),
-      );
+      // Request storage permission
+      if (await Permission.storage.request().isGranted) {
+        final response = await http.get(Uri.parse(qrUrl));
+        
+        // Get downloads directory
+        final directory = await getExternalStorageDirectory();
+        final fileName = 'qr_code_${DateTime.now().millisecondsSinceEpoch}.png';
+        final filePath = '${directory?.path}/$fileName';
+        
+        // Save file
+        final file = File(filePath);
+        await file.writeAsBytes(response.bodyBytes);
+
+        // Notify media scanner to make file visible in gallery
+        await _scanFile(filePath);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('QR Code berhasil disimpan ke Downloads'))
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Izin penyimpanan diperlukan'))
+        );
+      }
     } catch (e) {
+      print('Error saving QR: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal menyimpan QR Code')),
+        SnackBar(content: Text('Gagal menyimpan QR Code'))
       );
+    }
+  }
+
+  Future<void> _scanFile(String path) async {
+    try {
+      if (Platform.isAndroid) {
+        await platform.invokeMethod('scanFile', {
+          'path': path,
+          'mimeType': 'image/png'
+        });
+      }
+    } catch (e) {
+      print('Error scanning file: $e');
     }
   }
 

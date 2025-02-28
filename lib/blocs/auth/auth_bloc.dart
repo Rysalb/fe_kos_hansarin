@@ -15,16 +15,19 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<LoginRequested>((event, emit) async {
       try {
         emit(AuthLoading());
-        
         final response = await _authService.login(event.email, event.password);
         
-        // Simpan token dan role
+        // Check status first
+        if (!response['status']) {
+          // Use error message from backend
+          emit(AuthFailure(response['message'] ?? 'Terjadi kesalahan'));
+          return;
+        }
+        
+        // If login successful, save token and role
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('token', response['token']);
         await prefs.setString('user_role', response['user']['role']);
-        
-        print('Token saved: ${response['token']}'); // Debugging
-        print('Role saved: ${response['user']['role']}'); // Debugging
         
         final user = UserModel(
           id: response['user']['id_user'],
@@ -35,7 +38,18 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         
         emit(AuthSuccess(user));
       } catch (e) {
-        emit(AuthFailure(e.toString()));
+        // Try to parse error message from response if available
+        String errorMessage = 'Terjadi kesalahan pada server';
+        if (e is Exception) {
+          final message = e.toString();
+          if (message.contains('Email yang Anda masukkan tidak terdaftar') ||
+              message.contains('Password yang Anda masukkan salah') ||
+              message.contains('Akun Anda masih dalam proses verifikasi admin') ||
+              message.contains('Akun Anda telah ditolak oleh admin')) {
+            errorMessage = message.replaceAll('Exception: ', '');
+          }
+        }
+        emit(AuthFailure(errorMessage));
       }
     });
 
@@ -49,4 +63,4 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       }
     });
   }
-} 
+}

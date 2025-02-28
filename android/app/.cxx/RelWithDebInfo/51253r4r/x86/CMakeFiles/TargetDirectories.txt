@@ -1,0 +1,2 @@
+D:/2GAS/proyek TA/proyekkos/android/app/.cxx/RelWithDebInfo/51253r4r/x86/CMakeFiles/edit_cache.dir
+D:/2GAS/proyek TA/proyekkos/android/app/.cxx/RelWithDebInfo/51253r4r/x86/CMakeFiles/rebuild_cache.dir

@@ -241,6 +241,7 @@ class _DashboardPageState extends State<DashboardPage> {
             color: Color(0xFFE7B789),
           ),
           child: AppBar(
+            automaticallyImplyLeading: false, // Add this line to remove back arrow
             title: Row(
               children: [
                 CircleAvatar(

@@ -14,3 +14,32 @@ class ApiConstants {
     return '$baseUrlimage/storage/ktp/$cleanPath';
   }
 }
+
+
+
+// class ApiConstants {
+//   // For debugging using localhost
+//   static const String baseUrl = 'http://127.0.0.1:8000/api';
+//   static const String baseUrlStorage = 'http://127.0.0.1:8000';
+//   static const String baseUrlimage = 'http://127.0.0.1:8000';
+
+//   static String getImageUrl(String? path) {
+//     if (path == null || path.isEmpty) return '';
+//     final cleanPath = path.startsWith('/') ? path.substring(1) : path;
+//     return '$baseUrlimage/storage/$cleanPath';
+//   }
+// }
+
+//for local development
+// class ApiConstants {
+//   // Use your computer's local IP address
+//   static const String baseUrl = 'http://192.168.17.170:8000/api'; // Replace x with your IP
+//   static const String baseUrlStorage = 'http://192.168.17.170:8000';
+//   static const String baseUrlimage = 'http://192.168.17.170:8000';
+
+//   static String getImageUrl(String? path) {
+//     if (path == null || path.isEmpty) return '';
+//     final cleanPath = path.startsWith('/') ? path.substring(1) : path;
+//     return '$baseUrlimage/storage/$cleanPath';
+//   }
+// }

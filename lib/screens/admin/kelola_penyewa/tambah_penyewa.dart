@@ -204,10 +204,17 @@ class _TambahPenyewaPageState extends State<TambahPenyewaPage> {
         ),
       );
     } catch (e) {
-      print('Error: $e'); // Untuk debugging
+      String errorMessage = 'Email sudah terdaftar, silakan gunakan email lain';
+      
+      // Check for specific email error
+      if (e.toString().contains('Email sudah terdaftar') || 
+          e.toString().contains('email has already been taken')) {
+        errorMessage = 'Email sudah terdaftar, silakan gunakan email lain';
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Gagal menambahkan penyewa: $e'),
+          content: Text(errorMessage),
           backgroundColor: Colors.red,
         ),
       );

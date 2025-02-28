@@ -176,6 +176,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with WidgetsBin
               color: Color(0xFFE7B789),
             ),
             child: AppBar(
+              automaticallyImplyLeading: false, // Add this line to remove back arrow
               title: Row(
                 children: [
                   CircleAvatar(

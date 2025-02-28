@@ -151,7 +151,7 @@ class _RegisterPageState extends State<RegisterPage> {
     setState(() => _isLoading = true);
 
     try {
-      await _authService.register(
+      final response = await _authService.register(
         name: _nameController.text,
         email: _emailController.text,
         password: _passwordController.text,
@@ -162,27 +162,46 @@ class _RegisterPageState extends State<RegisterPage> {
         nomorWa: _whatsappController.text,
       );
 
-      // Langsung navigasi ke halaman sukses tanpa mengecek response.status
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => RegistrationSuccessPage()),
-        );
-      }
-    } catch (e) {
-      // Cek apakah data berhasil tersimpan meskipun ada error
-      if (e.toString().contains("type '_Map<String, dynamic>' is not a subtype of type 'UserModel?'")) {
-        // Jika error hanya masalah format response, tetap lanjut ke halaman sukses
+      // Modify the check to handle potential null values
+      if (response != null) {
         if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => RegistrationSuccessPage()),
+          // Show success message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Registrasi berhasil'),
+              backgroundColor: Colors.green,
+            ),
           );
+
+          // Navigate to success page with slight delay
+          Future.delayed(Duration(milliseconds: 500), () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => RegistrationSuccessPage()),
+            );
+          });
         }
       } else {
-        // Jika error lain, tampilkan snackbar
+        throw Exception('Gagal melakukan registrasi');
+      }
+    } catch (e) {
+      if (mounted) {
+        String errorMessage;
+        
+        if (e.toString().contains('Email sudah terdaftar')) {
+          errorMessage = 'Email sudah terdaftar. Silakan gunakan email lain.';
+        } else if (e.toString().contains('Validation Error')) {
+          errorMessage = 'Data yang dimasukkan tidak valid';
+        } else {
+          errorMessage = e.toString().replaceAll('Exception: ', '');
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal melakukan registrasi. Silakan coba lagi.')),
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
         );
       }
     } finally {
@@ -256,7 +275,19 @@ class _RegisterPageState extends State<RegisterPage> {
                   label: 'Nomor WhatsApp',
                   icon: Icons.phone,
                   keyboardType: TextInputType.phone,
-                  validator: (value) => value!.isEmpty ? 'Masukkan nomor WhatsApp' : null,
+                  hintText: '628xxxxxxxxxx',
+                  validator: (value) {
+                    if (value!.isEmpty) {
+                      return 'Masukkan nomor WhatsApp';
+                    }
+                    if (!value.startsWith('62')) {
+                      return 'Nomor harus diawali dengan 62';
+                    }
+                    if (!RegExp(r'^62[0-9]{9,13}$').hasMatch(value)) {
+                      return 'Format nomor WhatsApp tidak valid';
+                    }
+                    return null;
+                  },
                 ),
                 SizedBox(height: 20),
                 _buildKTPUpload(),
@@ -266,7 +297,16 @@ class _RegisterPageState extends State<RegisterPage> {
                   label: 'Email',
                   icon: Icons.email,
                   keyboardType: TextInputType.emailAddress,
-                  validator: (value) => value!.isEmpty ? 'Masukkan email' : null,
+                  hintText: 'contoh@email.com',
+                  validator: (value) {
+                    if (value!.isEmpty) {
+                      return 'Masukkan email';
+                    }
+                    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                      return 'Format email tidak valid';
+                    }
+                    return null;
+                  },
                 ),
                 SizedBox(height: 20),
                 _buildTextField(
@@ -274,7 +314,20 @@ class _RegisterPageState extends State<RegisterPage> {
                   label: 'NIK',
                   icon: Icons.badge,
                   keyboardType: TextInputType.number,
-                  validator: (value) => value!.length != 16 ? 'NIK harus 16 digit' : null,
+                  hintText: 'Masukkan NIK',
+                  maxLength: 16,
+                  validator: (value) {
+                    if (value!.isEmpty) {
+                      return 'Masukkan NIK';
+                    }
+                    if (value.length != 16) {
+                      return 'NIK harus 16 digit';
+                    }
+                    if (!RegExp(r'^[0-9]{16}$').hasMatch(value)) {
+                      return 'NIK hanya boleh berisi angka';
+                    }
+                    return null;
+                  },
                 ),
                 SizedBox(height: 20),
                 _buildTextField(
@@ -317,6 +370,8 @@ class _RegisterPageState extends State<RegisterPage> {
     TextInputType? keyboardType,
     Widget? suffixIcon,
     int? maxLines = 1,
+    String? hintText,
+    int? maxLength,
     String? Function(String?)? validator,
   }) {
     return Container(
@@ -346,12 +401,16 @@ class _RegisterPageState extends State<RegisterPage> {
             obscureText: obscureText,
             keyboardType: keyboardType,
             maxLines: maxLines,
+            maxLength: maxLength,
             validator: validator,
             decoration: InputDecoration(
               filled: true,
               fillColor: Colors.white,
+              hintText: hintText,
+              hintStyle: TextStyle(color: Colors.grey[400]),
               prefixIcon: Icon(icon, color: Color(0xFF4A2F1C)),
               suffixIcon: suffixIcon,
+              counterText: '', // Hide character counter
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(15),
                 borderSide: BorderSide.none,

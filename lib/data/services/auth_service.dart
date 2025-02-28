@@ -71,7 +71,6 @@ class AuthService {
       Uri.parse('${ApiConstants.baseUrl}/register'),
     );
 
-    // Tambahkan fields
     request.fields.addAll({
       'name': name,
       'email': email,
@@ -82,7 +81,6 @@ class AuthService {
       'nomor_wa': nomorWa,
     });
 
-    // Tambahkan file foto KTP
     request.files.add(await http.MultipartFile.fromPath(
       'foto_ktp',
       fotoKtp.path,
@@ -94,13 +92,14 @@ class AuthService {
       var jsonResponse = json.decode(responseData);
 
       return AuthResponse(
-        status: jsonResponse['status'],
-        message: jsonResponse['message'],
+        status: jsonResponse['status'] ?? false,
+        message: jsonResponse['message'] ?? 'Unknown error',
         token: jsonResponse['token'],
-        user: jsonResponse['user'],
+        user: jsonResponse['user'] != null ? UserModel.fromJson(jsonResponse['user']) : null,
       );
     } catch (e) {
-      throw Exception('Registration failed: $e');
+      print('Registration error: $e');
+      throw Exception(e.toString());
     }
   }
 
