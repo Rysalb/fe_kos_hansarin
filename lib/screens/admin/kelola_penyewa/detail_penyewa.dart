@@ -48,7 +48,7 @@ class _DetailPenyewaPageState extends State<DetailPenyewaPage> {
     return Scaffold(
       backgroundColor: Color(0xFFFFF8E7),
       appBar: AppBar(
-        title: Text('Detail Penyewa', style: TextStyle(color: Colors.black)),
+        title: Text('Detail Penyewa', style: TextStyle(color: Colors.black, fontSize : 20)),
         backgroundColor: Color(0xFFE7B789),
         elevation: 0,
         leading: IconButton(

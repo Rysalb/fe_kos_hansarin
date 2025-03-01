@@ -39,9 +39,16 @@ class _KelolaPenyewaPageState extends State<KelolaPenyewaPage> {
     return Scaffold(
       backgroundColor: Color(0xFFFFF8E7),
       appBar: AppBar(
-        title: Text(
-          'Kelola Identitas Penyewa',
-          style: TextStyle(color: Colors.black),
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            'Kelola Identitas Penyewa',
+            style: TextStyle(
+              color: Colors.black, 
+              fontSize: MediaQuery.of(context).size.width * 0.045, // Responsive font size
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ),
         backgroundColor: Color(0xFFE7B789),
         elevation: 0,
@@ -50,6 +57,85 @@ class _KelolaPenyewaPageState extends State<KelolaPenyewaPage> {
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
+          IconButton(
+            icon: Icon(Icons.info_outline, color: Colors.black),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: Text(
+                      'Panduan Penggunaan',
+                      style: TextStyle(
+                        color: Color(0xFF4A2F1C),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    content: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _buildInfoSection(
+                            'Status Kamar:',
+                            [
+                              '• Kosong: Kamar belum ada penyewa',
+                              '• Dihuni: Kamar sudah ada penyewa aktif',
+                              '• Warna abu: Menandakan kamar kosong',
+                              '• Warna cream: Menandakan kamar dihuni',
+                            ],
+                          ),
+                          SizedBox(height: 16),
+                          _buildInfoSection(
+                            'Menambah Penyewa Baru:',
+                            [
+                              '1. Pilih kamar dengan status "Kosong"',
+                              '2. Tekan tombol "Tambah Data"',
+                              '3. Isi formulir data penyewa',
+                              '4. Upload foto KTP',
+                              '5. Simpan data penyewa',
+                            ],
+                          ),
+                          SizedBox(height: 16),
+                          _buildInfoSection(
+                            'Melihat Detail Penyewa:',
+                            [
+                              '1. Pilih kamar dengan status "Dihuni"',
+                              '2. Tekan card untuk melihat detail',
+                              '3. Lihat informasi lengkap penyewa',
+                            ],
+                          ),
+                          SizedBox(height: 16),
+                          _buildInfoSection(
+                            'Verifikasi Penyewa:',
+                            [
+                              '1. Tekan icon identitas di pojok kanan atas',
+                              '2. Pilih penyewa yang akan diverifikasi',
+                              '3. Cek kelengkapan data dan dokumen',
+                              '4. Verifikasi atau tolak pendaftaran',
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    actions: [
+                      TextButton(
+                        child: Text(
+                          'Tutup',
+                          style: TextStyle(color: Color(0xFF4A2F1C)),
+                        ),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                    ],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    backgroundColor: Color(0xFFFFF8E7),
+                  );
+                },
+              );
+            },
+          ),
           IconButton(
             icon: Image.asset('assets/images/dashboard_icon/identitas_penyewa.png', width: 50, height: 50),
             onPressed: () {
@@ -94,6 +180,7 @@ class _KelolaPenyewaPageState extends State<KelolaPenyewaPage> {
                         '${unit['nomor_kamar']}',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
+                          fontSize: MediaQuery.of(context).size.width * 0.04, // Responsive font size
                         ),
                       ),
                       subtitle: isKosong
@@ -114,7 +201,12 @@ class _KelolaPenyewaPageState extends State<KelolaPenyewaPage> {
                                     }
                                   });
                                 },
-                                child: Text('Tambah Data'),
+                                child: Text(
+                                  'Tambah Data',
+                                  style: TextStyle(
+                                    fontSize: MediaQuery.of(context).size.width * 0.035, // Responsive font size
+                                  ),
+                                ),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Color.fromARGB(255, 0, 0, 0),
                                   foregroundColor: Colors.white,
@@ -128,15 +220,31 @@ class _KelolaPenyewaPageState extends State<KelolaPenyewaPage> {
                           : Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('Nama: ${penyewa['user']['name']}'),
-                                Text('Sisa: ${_calculateSisaHari(penyewa['tanggal_keluar'], penyewa['durasi_sewa'])} hari'),
-                                Text('Status: ${penyewa['status_penyewa']}'),
+                                Text(
+                                  'Nama: ${penyewa['user']['name']}',
+                                  style: TextStyle(
+                                    fontSize: MediaQuery.of(context).size.width * 0.035, // Responsive font size
+                                  ),
+                                ),
+                                Text(
+                                  'Sisa: ${_calculateSisaHari(penyewa['tanggal_keluar'], penyewa['durasi_sewa'])} hari',
+                                  style: TextStyle(
+                                    fontSize: MediaQuery.of(context).size.width * 0.035,
+                                  ),
+                                ),
+                                Text(
+                                  'Status: ${penyewa['status_penyewa']}',
+                                  style: TextStyle(
+                                    fontSize: MediaQuery.of(context).size.width * 0.035,
+                                  ),
+                                ),
                               ],
                             ),
                       trailing: Text(
                         isKosong ? 'Kosong' : 'Dihuni',
                         style: TextStyle(
                           color: isKosong ? Colors.red : Colors.green,
+                          fontSize: MediaQuery.of(context).size.width * 0.035, // Responsive font size
                         ),
                       ),
                       onTap: isKosong
@@ -166,4 +274,31 @@ class _KelolaPenyewaPageState extends State<KelolaPenyewaPage> {
     // Menghitung sisa hari berdasarkan durasi sewa
     return (selisih < 0) ? 'Sewa telah berakhir' : selisih.toString();
   }
-} 
+
+  Widget _buildInfoSection(String title, List<String> items) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: MediaQuery.of(context).size.width * 0.04, // Responsive title
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF4A2F1C),
+          ),
+        ),
+        SizedBox(height: 8),
+        ...items.map((item) => Padding(
+          padding: EdgeInsets.only(left: 8, bottom: 4),
+          child: Text(
+            item,
+            style: TextStyle(
+              fontSize: MediaQuery.of(context).size.width * 0.035, // Responsive items
+              color: Colors.black87,
+            ),
+          ),
+        )),
+      ],
+    );
+  }
+}

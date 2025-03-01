@@ -54,7 +54,53 @@ class _KelolaKatalogScreenState extends State<KelolaKatalogScreen> {
           IconButton(
             icon: Icon(Icons.info_outline),
             onPressed: () {
-              // Tambahkan fungsi info jika diperlukan
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: Text(
+                      'Panduan Penggunaan',
+                      style: TextStyle(
+                        color: Color(0xFF4A2F1C),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    content: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _buildInfoSection(
+                            'Menambah Menu Baru:',
+                            [
+                              '1. Isi nama menu yang akan ditambahkan',
+                              '2. Pilih kategori (Makanan/Minuman)',
+                              '3. Masukkan jumlah stok yang tersedia',
+                              '4. Isi harga menu',
+                              '5. Upload foto menu dengan tap area foto',
+                              '6. Tekan tombol Simpan',
+                            ],
+                          ),
+                        
+                        ],
+                      ),
+                    ),
+                    actions: [
+                      TextButton(
+                        child: Text(
+                          'Tutup',
+                          style: TextStyle(color: Color(0xFF4A2F1C)),
+                        ),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                    ],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    backgroundColor: Color(0xFFFFF8E7),
+                  );
+                },
+              );
             },
           ),
         ],
@@ -247,4 +293,31 @@ class _KelolaKatalogScreenState extends State<KelolaKatalogScreen> {
     _hargaController.dispose();
     super.dispose();
   }
-} 
+}
+
+Widget _buildInfoSection(String title, List<String> items) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        title,
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+          color: Color(0xFF4A2F1C),
+        ),
+      ),
+      SizedBox(height: 8),
+      ...items.map((item) => Padding(
+        padding: EdgeInsets.only(left: 8, bottom: 4),
+        child: Text(
+          item,
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.black87,
+          ),
+        ),
+      )),
+    ],
+  );
+}
