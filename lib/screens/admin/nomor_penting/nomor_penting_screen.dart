@@ -64,6 +64,33 @@ class _NomorPentingScreenState extends State<NomorPentingScreen> {
     }
   }
 
+  Widget _buildInfoSection(String title, List<String> items) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF4A2F1C),
+          ),
+        ),
+        SizedBox(height: 8),
+        ...items.map((item) => Padding(
+              padding: EdgeInsets.only(left: 8, bottom: 4),
+              child: Text(
+                item,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.black87,
+                ),
+              ),
+            )),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -79,6 +106,75 @@ class _NomorPentingScreenState extends State<NomorPentingScreen> {
           icon: Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.info_outline, color: Colors.black),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: Text(
+                      'Panduan Penggunaan',
+                      style: TextStyle(
+                        color: Color(0xFF4A2F1C),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    content: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _buildInfoSection(
+                            'Menambah Nomor Penting:',
+                            [
+                              '1. Tekan tombol + di pojok kanan bawah',
+                              '2. Isi nama kontak',
+                              '3. Masukkan nomor WhatsApp (diawali 62)',
+                              '4. Tekan tombol Simpan',
+                            ],
+                          ),
+                          SizedBox(height: 16),
+                          _buildInfoSection(
+                            'Mengubah Nomor Penting:',
+                            [
+                              '1. Tekan nomor yang ingin diubah',
+                              '2. Ubah informasi yang diinginkan',
+                              '3. Tekan tombol Simpan',
+                            ],
+                          ),
+                          SizedBox(height: 16),
+                          _buildInfoSection(
+                            'Menghapus Nomor Penting:',
+                            [
+                              '1. Geser item ke kiri',
+                              '2. Konfirmasi penghapusan pada dialog',
+                              '3. Nomor akan terhapus dari sistem',
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    actions: [
+                      TextButton(
+                        child: Text(
+                          'Tutup',
+                          style: TextStyle(color: Color(0xFF4A2F1C)),
+                        ),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                    ],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    backgroundColor: Color(0xFFFFF8E7),
+                  );
+                },
+              );
+            },
+          ),
+        ],
       ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
@@ -217,4 +313,4 @@ class _NomorPentingScreenState extends State<NomorPentingScreen> {
       ),
     );
   }
-} 
+}

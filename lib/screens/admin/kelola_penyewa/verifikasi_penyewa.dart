@@ -247,20 +247,31 @@ class _VerifikasiPenyewaScreenState extends State<VerifikasiPenyewaScreen> {
 
   Future<void> _handleTolak(Map<String, dynamic> user) async {
     try {
-      await _authService.verifikasiUser(
+      final response = await _authService.verifikasiUser(
         user['id_user'],
         'ditolak',
         null,
         null,
-        0.0
+        null  // Set null for harga_sewa too
       );
-      _fetchPendingUsers();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Berhasil menolak penyewa')),
-      );
+
+      if (response['status'] == true) {
+        await _fetchPendingUsers();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Berhasil menolak penyewa'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        throw Exception(response['message'] ?? 'Gagal menolak penyewa');
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal menolak: ${e.toString()}')),
+        SnackBar(
+          content: Text('Gagal menolak: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -395,4 +406,4 @@ class _VerifikasiPenyewaScreenState extends State<VerifikasiPenyewaScreen> {
                 ),
     );
   }
-} 
+}

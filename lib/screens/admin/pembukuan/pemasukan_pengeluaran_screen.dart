@@ -38,9 +38,31 @@ class _PemasukanPengeluaranScreenState extends State<PemasukanPengeluaranScreen>
       final rekap = await _service.getRekapBulanan(now.month, now.year);
       final transaksi = await _service.getAllTransaksi();
       
+      // Filter transaksi untuk tahun berjalan saja
+      final filteredTransaksi = transaksi.where((item) {
+        final tanggalTransaksi = DateTime.parse(item['tanggal']);
+        return tanggalTransaksi.year == now.year;
+      }).toList();
+      
+      // Hitung ulang total pemasukan dan pengeluaran untuk tahun ini
+      double totalPemasukan = 0;
+      double totalPengeluaran = 0;
+      
+      for (var item in filteredTransaksi) {
+        final jumlah = double.parse(item['jumlah'].toString());
+        if (item['jenis_transaksi'] == 'pemasukan') {
+          totalPemasukan += jumlah;
+        } else {
+          totalPengeluaran += jumlah;
+        }
+      }
+      
       setState(() {
-        _rekapData = Map<String, dynamic>.from(rekap);
-        _transaksi = transaksi.map((item) => Map<String, dynamic>.from(item)).toList();
+        _rekapData = {
+          'total_pemasukan': totalPemasukan,
+          'total_pengeluaran': totalPengeluaran,
+        };
+        _transaksi = filteredTransaksi;
         _isLoading = false;
       });
     } catch (e) {
@@ -116,16 +138,41 @@ class _PemasukanPengeluaranScreenState extends State<PemasukanPengeluaranScreen>
   }
 
   Future<void> _loadTransaksiByJenis(String jenis) async {
-    if (jenis == 'semua') {
-      _loadData();
-      return;
-    }
-
     setState(() => _isLoading = true);
+    
     try {
-      final transaksi = await _service.getTransaksiByJenis(jenis);
+      // Reload fresh data first
+      await _loadData();
+      
+      if (jenis.toLowerCase() == 'semua') {
+        // Data already reloaded, just update loading state
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      final filteredData = _transaksi.where((item) => 
+        item['jenis_transaksi'].toLowerCase() == jenis.toLowerCase()
+      ).toList();
+
+      // Recalculate totals for filtered data
+      double totalPemasukan = 0;
+      double totalPengeluaran = 0;
+      
+      for (var item in filteredData) {
+        final jumlah = double.parse(item['jumlah'].toString());
+        if (item['jenis_transaksi'] == 'pemasukan') {
+          totalPemasukan += jumlah;
+        } else {
+          totalPengeluaran += jumlah;
+        }
+      }
+
       setState(() {
-        _transaksi = transaksi;
+        _transaksi = filteredData;
+        _rekapData = {
+          'total_pemasukan': totalPemasukan,
+          'total_pengeluaran': totalPengeluaran,
+        };
         _isLoading = false;
       });
     } catch (e) {
@@ -174,7 +221,81 @@ class _PemasukanPengeluaranScreenState extends State<PemasukanPengeluaranScreen>
                               SizedBox(width: 8),
                               GestureDetector(
                                 onTap: () {
-                                  // TODO: Show info dialog
+                                  showDialog(
+                                    context: context,
+                                    builder: (BuildContext context) {
+                                      return AlertDialog(
+                                        title: Text(
+                                          'Panduan Penggunaan',
+                                          style: TextStyle(
+                                            color: Color(0xFF4A2F1C),
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        content: SingleChildScrollView(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              _buildInfoSection(
+                                                'Menambah Transaksi:',
+                                                [
+                                                  '1. Tekan tombol + di pojok kanan bawah',
+                                                  '2. Pilih jenis transaksi (Pemasukan/Pengeluaran)',
+                                                  '3. Pilih kategori transaksi',
+                                                  '4. Isi jumlah nominal',
+                                                  '5. Tambahkan keterangan jika diperlukan',
+                                                  '6. Tekan tombol Simpan',
+                                                ],
+                                              ),
+                                              SizedBox(height: 16),
+                                              _buildInfoSection(
+                                                'Mengubah Transaksi:',
+                                                [
+                                                  '1. Tekan item transaksi yang ingin diubah',
+                                                  '2. Ubah informasi yang diinginkan',
+                                                  '3. Tekan tombol Perbarui',
+                                                  'Catatan: Transaksi dari pembayaran tidak dapat diubah',
+                                                ],
+                                              ),
+                                              SizedBox(height: 16),
+                                              _buildInfoSection(
+                                                'Menghapus Transaksi:',
+                                                [
+                                                  '1. Tekan item transaksi yang ingin dihapus',
+                                                  '2. Tekan icon hapus di pojok kanan atas',
+                                                  '3. Konfirmasi penghapusan',
+                                                  'Catatan: Transaksi dari pembayaran tidak dapat dihapus',
+                                                ],
+                                              ),
+                                              SizedBox(height: 16),
+                                              _buildInfoSection(
+                                                'Filter dan Rekap:',
+                                                [
+                                                  '• Gunakan dropdown filter untuk melihat transaksi berdasarkan periode',
+                                                  '• Gunakan kalender untuk melihat transaksi pada tanggal tertentu',
+                                                  '• Lihat rekap total pemasukan dan pengeluaran di bagian atas',
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            child: Text(
+                                              'Tutup',
+                                              style: TextStyle(color: Color(0xFF4A2F1C)),
+                                            ),
+                                            onPressed: () => Navigator.of(context).pop(),
+                                          ),
+                                        ],
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(15),
+                                        ),
+                                        backgroundColor: Color(0xFFFFF8E7),
+                                      );
+                                    },
+                                  );
                                 },
                                 child: Icon(
                                   Icons.info_outline,
@@ -396,10 +517,13 @@ class _PemasukanPengeluaranScreenState extends State<PemasukanPengeluaranScreen>
     );
   }
 
-  void _filterData(String filter) {
+  void _filterData(String filter) async {
     setState(() => _isLoading = true);
     
     try {
+      // Reload fresh data first
+      await _loadData();
+      
       final now = DateTime.now();
       final filteredData = _transaksi.where((item) {
         final tanggal = DateTime.parse(item['tanggal']);
@@ -423,8 +547,25 @@ class _PemasukanPengeluaranScreenState extends State<PemasukanPengeluaranScreen>
         }
       }).toList();
 
+      // Recalculate totals for filtered data
+      double totalPemasukan = 0;
+      double totalPengeluaran = 0;
+      
+      for (var item in filteredData) {
+        final jumlah = double.parse(item['jumlah'].toString());
+        if (item['jenis_transaksi'] == 'pemasukan') {
+          totalPemasukan += jumlah;
+        } else {
+          totalPengeluaran += jumlah;
+        }
+      }
+
       setState(() {
         _transaksi = filteredData;
+        _rekapData = {
+          'total_pemasukan': totalPemasukan,
+          'total_pengeluaran': totalPengeluaran,
+        };
         _isLoading = false;
       });
     } catch (e) {
@@ -549,6 +690,33 @@ class _PemasukanPengeluaranScreenState extends State<PemasukanPengeluaranScreen>
           ),
         );
       },
+    );
+  }
+
+  Widget _buildInfoSection(String title, List<String> items) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF4A2F1C),
+          ),
+        ),
+        SizedBox(height: 8),
+        ...items.map((item) => Padding(
+          padding: EdgeInsets.only(left: 8, bottom: 4),
+          child: Text(
+            item,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.black87,
+            ),
+          ),
+        )),
+      ],
     );
   }
 }

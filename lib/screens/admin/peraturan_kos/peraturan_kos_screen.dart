@@ -77,6 +77,33 @@ class _PeraturanKosScreenState extends State<PeraturanKosScreen> {
     }
   }
 
+  Widget _buildInfoSection(String title, List<String> items) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF4A2F1C),
+          ),
+        ),
+        SizedBox(height: 8),
+        ...items.map((item) => Padding(
+              padding: EdgeInsets.only(left: 8, bottom: 4),
+              child: Text(
+                item,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.black87,
+                ),
+              ),
+            )),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -96,7 +123,68 @@ class _PeraturanKosScreenState extends State<PeraturanKosScreen> {
           IconButton(
             icon: Icon(Icons.info_outline, color: Colors.black),
             onPressed: () {
-              // Implementasi info button
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: Text(
+                      'Panduan Penggunaan',
+                      style: TextStyle(
+                        color: Color(0xFF4A2F1C),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    content: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _buildInfoSection(
+                            'Membuat Peraturan Kos:',
+                            [
+                              '1. Tekan tombol + di pojok kanan bawah',
+                              '2. Tulis peraturan kos (satu peraturan per baris)',
+                              '3. Tekan tombol Simpan',
+                            ],
+                          ),
+                          SizedBox(height: 16),
+                          _buildInfoSection(
+                            'Mengubah Peraturan Kos:',
+                            [
+                              '1. Tekan tombol + di pojok kanan bawah',
+                              '2. Peraturan yang ada akan otomatis terisi',
+                              '3. Ubah peraturan sesuai kebutuhan',
+                              '4. Tekan tombol Simpan',
+                            ],
+                          ),
+                          SizedBox(height: 16),
+                          _buildInfoSection(
+                            'Catatan:',
+                            [
+                              '• Setiap peraturan akan diberi nomor urut otomatis',
+                              '• Peraturan akan langsung diperbarui setelah disimpan',
+                              '• Tanggal pembuatan/perubahan akan otomatis tercatat',
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    actions: [
+                      TextButton(
+                        child: Text(
+                          'Tutup',
+                          style: TextStyle(color: Color(0xFF4A2F1C)),
+                        ),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                    ],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    backgroundColor: Color(0xFFFFF8E7),
+                  );
+                },
+              );
             },
           ),
         ],
@@ -214,4 +302,4 @@ class _PeraturanKosScreenState extends State<PeraturanKosScreen> {
     _peraturanController.dispose();
     super.dispose();
   }
-} 
+}

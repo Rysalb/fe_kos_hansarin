@@ -32,20 +32,68 @@ class _MetodePembayaranScreenState extends State<MetodePembayaranScreen> {
     }
   }
 
-  Future<void> _deleteMetodePembayaran(int id) async {
+  Future<void> _deleteMetodePembayaran(dynamic id) async {
     try {
-      final success = await _metodePembayaranService.deleteMetodePembayaran(id);
+      // Add null check and type conversion
+      if (id == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('ID metode pembayaran tidak valid')),
+        );
+        return;
+      }
+
+      // Convert id to int safely
+      final int metodeId = id is int ? id : int.tryParse(id.toString()) ?? -1;
+      if (metodeId == -1) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('ID metode pembayaran tidak valid')),
+        );
+        return;
+      }
+
+      final success = await _metodePembayaranService.deleteMetodePembayaran(metodeId);
       if (success) {
+        setState(() {
+          _metodePembayaran.removeWhere((item) => item['id_metode'] == metodeId);
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Metode pembayaran berhasil dihapus')),
         );
-        _loadMetodePembayaran(); // Refresh data
+      } else {
+        throw Exception('Gagal menghapus metode pembayaran');
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Gagal menghapus metode pembayaran')),
       );
     }
+  }
+
+  Widget _buildInfoSection(String title, List<String> items) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF4A2F1C),
+          ),
+        ),
+        SizedBox(height: 8),
+        ...items.map((item) => Padding(
+              padding: EdgeInsets.only(left: 8, bottom: 4),
+              child: Text(
+                item,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.black87,
+                ),
+              ),
+            )),
+      ],
+    );
   }
 
   @override
@@ -67,7 +115,71 @@ class _MetodePembayaranScreenState extends State<MetodePembayaranScreen> {
           IconButton(
             icon: Icon(Icons.info_outline, color: Colors.black),
             onPressed: () {
-              // Tambahkan informasi dialog jika diperlukan
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: Text(
+                      'Panduan Penggunaan',
+                      style: TextStyle(
+                        color: Color(0xFF4A2F1C),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    content: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _buildInfoSection(
+                            'Menambah Metode Pembayaran:',
+                            [
+                              '1. Tekan tombol + di pojok kanan bawah',
+                              '2. Isi nama metode pembayaran',
+                              '3. Pilih kategori (Bank/E-wallet)',
+                              '4. Upload logo metode pembayaran',
+                              '5. Isi nomor rekening (untuk Bank)',
+                              '6. Upload QR Code (untuk E-wallet)',
+                              '7. Tekan tombol Simpan',
+                            ],
+                          ),
+                          SizedBox(height: 16),
+                          _buildInfoSection(
+                            'Mengubah Metode Pembayaran:',
+                            [
+                              '1. Tekan metode pembayaran yang ingin diubah',
+                              '2. Ubah informasi yang diinginkan',
+                              '3. Tekan tombol Simpan untuk menyimpan perubahan',
+                            ],
+                          ),
+                          SizedBox(height: 16),
+                          _buildInfoSection(
+                            'Menghapus Metode Pembayaran:',
+                            [
+                              '1. Geser item ke kiri',
+                              '2. Konfirmasi penghapusan pada dialog yang muncul',
+                              '3. Metode pembayaran akan terhapus dari sistem',
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    actions: [
+                      TextButton(
+                        child: Text(
+                          'Tutup',
+                          style: TextStyle(color: Color(0xFF4A2F1C)),
+                        ),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                    ],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    backgroundColor: Color(0xFFFFF8E7),
+                  );
+                },
+              );
             },
           ),
         ],
@@ -105,7 +217,7 @@ class _MetodePembayaranScreenState extends State<MetodePembayaranScreen> {
                     return Padding(
                       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       child: Dismissible(
-                        key: Key(metode['id'].toString()),
+                        key: Key(metode['id_metode']?.toString() ?? ''), // Update key to use id_metode
                         direction: DismissDirection.endToStart,
                         background: Container(
                           alignment: Alignment.centerRight,
@@ -144,7 +256,7 @@ class _MetodePembayaranScreenState extends State<MetodePembayaranScreen> {
                           );
                         },
                         onDismissed: (direction) {
-                          _deleteMetodePembayaran(metode['id']);
+                          _deleteMetodePembayaran(metode['id_metode']); // Use id_metode
                         },
                         child: GestureDetector(
                           onTap: () {
@@ -210,4 +322,4 @@ class _MetodePembayaranScreenState extends State<MetodePembayaranScreen> {
       ),
     );
   }
-} 
+}

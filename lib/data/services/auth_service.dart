@@ -183,7 +183,7 @@ class AuthService {
     }
   }
 
-  Future<void> verifikasiUser(
+  Future<Map<String, dynamic>> verifikasiUser(
     int userId,
     String status,
     DateTime? tanggalMasuk,
@@ -194,6 +194,17 @@ class AuthService {
       final token = await getToken();
       if (token == null) throw Exception('Token tidak ditemukan');
 
+      final Map<String, dynamic> body = {
+        'status': status,
+      };
+
+      // Only add these fields if status is 'disetujui'
+      if (status == 'disetujui') {
+        body['tanggal_masuk'] = DateFormat('yyyy-MM-dd').format(tanggalMasuk!);
+        body['durasi_sewa'] = durasiSewa;
+        body['harga_sewa'] = hargaSewa;
+      }
+
       final response = await http.post(
         Uri.parse('${ApiConstants.baseUrl}/verifikasi-user/$userId'),
         headers: {
@@ -201,22 +212,11 @@ class AuthService {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
         },
-        body: jsonEncode({
-          'status': status,
-          'tanggal_masuk': tanggalMasuk?.toIso8601String(),
-          'durasi_sewa': durasiSewa,
-          'harga_sewa': hargaSewa,
-        }),
+        body: jsonEncode(body),
       );
 
-      print('Verifikasi response: ${response.body}'); // Debug print
-
-      if (response.statusCode != 200) {
-        final errorData = json.decode(response.body);
-        throw Exception(errorData['message'] ?? 'Gagal memverifikasi user');
-      }
+      return json.decode(response.body);
     } catch (e) {
-      print('Error in verifikasiUser: $e'); // Debug print
       throw Exception('Error: $e');
     }
   }
