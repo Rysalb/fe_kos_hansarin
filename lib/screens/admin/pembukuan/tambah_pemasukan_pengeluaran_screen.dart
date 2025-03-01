@@ -32,6 +32,9 @@ class _TambahPemasukanPengeluaranScreenState extends State<TambahPemasukanPengel
   Map<String, dynamic>? _selectedPenyewa;
   final _penyewaService = PenyewaService();
 
+  List<Map<String, dynamic>> _hargaSewaOptions = [];
+  String? _selectedHargaSewa;
+
   // Daftar kategori sesuai jenis transaksi
   final List<String> _kategoriPemasukan = [
     'Pembayaran Sewa',
@@ -130,7 +133,14 @@ class _TambahPemasukanPengeluaranScreenState extends State<TambahPemasukanPengel
         );
       }).toList(),
       onChanged: (Map<String, dynamic>? newValue) {
-        setState(() => _selectedPenyewa = newValue);
+        setState(() {
+          _selectedPenyewa = newValue;
+          if (newValue != null) {
+            _loadHargaSewaOptions(newValue);
+            _selectedHargaSewa = null;
+            _jumlahController.clear();
+          }
+        });
       },
       validator: (value) {
         if (_selectedKategori == 'Pembayaran Sewa' && value == null) {
@@ -153,20 +163,31 @@ class _TambahPemasukanPengeluaranScreenState extends State<TambahPemasukanPengel
         String keterangan = _keteranganController.text;
         
         if (_selectedKategori == 'Pembayaran Sewa' && _selectedPenyewa != null) {
+          // Get selected duration
+          final selectedDurasiOption = _hargaSewaOptions.firstWhere(
+            (option) => option['harga'].toString() == _selectedHargaSewa
+          );
+          
+          // Calculate new end date
+          final currentEndDate = DateTime.parse(_selectedPenyewa!['tanggal_keluar']);
+          final newEndDate = currentEndDate.add(Duration(days: selectedDurasiOption['durasi'] * 30));
+
           keterangan = 'Pembayaran sewa kamar ${_selectedPenyewa!['unit_kamar']['nomor_kamar']} - '
                       '${_selectedPenyewa!['user']['name']} '
-                      '[Metode: ${_selectedMetodePembayaran}]';
-          
-          // Create pembayaran record
+                      '[Metode: ${_selectedMetodePembayaran}] '
+                      '(${selectedDurasiOption['label']})';
+
           await _service.create(
-            jenisTransaksi: _isPemasukan ? 'pemasukan' : 'pengeluaran',
+            jenisTransaksi: 'pemasukan',
             kategori: _selectedKategori!,
             tanggal: _selectedDate,
-            jumlah: jumlah,
+            jumlah: double.parse(_selectedHargaSewa!),
             keterangan: keterangan,
-            idPenyewa: int.parse(_selectedPenyewa!['id_penyewa'].toString()), // Convert to int
+            idPenyewa: int.parse(_selectedPenyewa!['id_penyewa'].toString()),
             metodePembayaran: _selectedMetodePembayaran,
-            idUser: int.parse(_selectedPenyewa!['user']['id_user'].toString()), // Add user id
+            idUser: int.parse(_selectedPenyewa!['user']['id_user'].toString()),
+            durasi: selectedDurasiOption['durasi'],
+            tanggalKeluar: newEndDate.toIso8601String(),
           );
         } else {
           // Regular transaction without payment record
@@ -212,6 +233,47 @@ class _TambahPemasukanPengeluaranScreenState extends State<TambahPemasukanPengel
     }
   }
 
+  void _loadHargaSewaOptions(Map<String, dynamic> penyewa) {
+    final kamar = penyewa['unit_kamar']['kamar'];
+    _hargaSewaOptions = [];
+
+    if (kamar['harga_sewa'] != null) {
+      _hargaSewaOptions.add({
+        'durasi': 1,
+        'harga': double.parse(kamar['harga_sewa'].toString()),
+        'label': '1 Bulan'
+      });
+    }
+    if (kamar['harga_sewa1'] != null) {
+      _hargaSewaOptions.add({
+        'durasi': 2,  
+        'harga': double.parse(kamar['harga_sewa1'].toString()),
+        'label': '2 Bulan'
+      });
+    }
+    if (kamar['harga_sewa2'] != null) {
+      _hargaSewaOptions.add({
+        'durasi': 3,
+        'harga': double.parse(kamar['harga_sewa2'].toString()),
+        'label': '3 Bulan'
+      });
+    }
+    if (kamar['harga_sewa3'] != null) {
+      _hargaSewaOptions.add({
+        'durasi': 6,
+        'harga': double.parse(kamar['harga_sewa3'].toString()),
+        'label': '6 Bulan'
+      });
+    }
+    if (kamar['harga_sewa4'] != null) {
+      _hargaSewaOptions.add({
+        'durasi': 12,
+        'harga': double.parse(kamar['harga_sewa4'].toString()),
+        'label': '12 Bulan'
+      });
+    }
+  }
+
   Widget _buildMetodePembayaranField() {
     return DropdownButtonFormField<String>(
       value: _selectedMetodePembayaran,
@@ -231,6 +293,40 @@ class _TambahPemasukanPengeluaranScreenState extends State<TambahPemasukanPengel
       validator: (value) {
         if (_selectedKategori == 'Pembayaran Sewa' && (value == null || value.isEmpty)) {
           return 'Metode pembayaran harus dipilih';
+        }
+        return null;
+      },
+    );
+  }
+
+  Widget _buildHargaSewaDropdown() {
+    return DropdownButtonFormField<String>(
+      value: _selectedHargaSewa,
+      decoration: InputDecoration(
+        labelText: 'Pilih Durasi & Harga Sewa',
+        border: OutlineInputBorder(),
+      ),
+      items: _hargaSewaOptions.map((option) {
+        return DropdownMenuItem<String>(
+          value: option['harga'].toString(),
+          child: Text('${option['label']} - Rp ${NumberFormat('#,###').format(option['harga'])}'),
+        );
+      }).toList(),
+      onChanged: (String? value) {
+        setState(() {
+          _selectedHargaSewa = value;
+          if (value != null) {
+            _jumlahController.text = NumberFormat.currency(
+              locale: 'id_ID',
+              symbol: 'Rp ',
+              decimalDigits: 0,
+            ).format(double.parse(value));
+          }
+        });
+      },
+      validator: (value) {
+        if (_selectedKategori == 'Pembayaran Sewa' && value == null) {
+          return 'Pilih durasi dan harga sewa';
         }
         return null;
       },
@@ -310,53 +406,69 @@ class _TambahPemasukanPengeluaranScreenState extends State<TambahPemasukanPengel
               SizedBox(height: 16),
 
               // Add penyewa dropdown before metode pembayaran if kategori is Pembayaran Sewa
-              if (_selectedKategori == 'Pembayaran Sewa') ...[
-                _buildPenyewaField(),
-                SizedBox(height: 16),
-                _buildMetodePembayaranField(),
-                SizedBox(height: 16),
-              ],
-
-              // Keterangan Field
-              TextFormField(
-                controller: _keteranganController,
-                decoration: InputDecoration(
-                  labelText: 'Keterangan',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 3,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Keterangan harus diisi';
-                  }
-                  return null;
-                },
+              if (_selectedKategori == 'Pembayaran Sewa') 
+                Column(
+                  children: <Widget>[
+                    _buildPenyewaField(),
+                    SizedBox(height: 16),
+                    _buildHargaSewaDropdown(),
+                    SizedBox(height: 16),
+                    _buildMetodePembayaranField(),
+                    SizedBox(height: 16),
+                    // Keterangan Field
+                    TextFormField(
+                      controller: _keteranganController,
+                      decoration: InputDecoration(
+                        labelText: 'Keterangan',
+                        border: OutlineInputBorder(),
+                      ),
+                      maxLines: 3,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Keterangan harus diisi';
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
+                )
+              else 
+              Column(
+                children: <Widget>[
+                  // Jumlah Field
+                  TextFormField(
+                    controller: _jumlahController,
+                    decoration: InputDecoration(
+                      labelText: _isPemasukan ? 'Jumlah Pemasukan' : 'Jumlah Pengeluaran',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.number,
+                    onChanged: _formatCurrency,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Jumlah harus diisi';
+                      }
+                      return null;
+                    },
+                  ),
+                  SizedBox(height: 16),
+                  // Keterangan Field
+                  TextFormField(
+                    controller: _keteranganController,
+                    decoration: InputDecoration(
+                      labelText: 'Keterangan',
+                      border: OutlineInputBorder(),
+                    ),
+                    maxLines: 3,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Keterangan harus diisi';
+                      }
+                      return null;
+                    },
+                  ),
+                ],
               ),
-              SizedBox(height: 16),
-
-              // Jumlah Field
-              TextFormField(
-                controller: _jumlahController,
-                decoration: InputDecoration(
-                  labelText: _isPemasukan ? 'Jumlah Pemasukan' : 'Jumlah Pengeluaran',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
-                onChanged: _formatCurrency,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Jumlah harus diisi';
-                  }
-                  try {
-                    String numStr = value.replaceAll('Rp ', '').replaceAll('.', '');
-                    double.parse(numStr);
-                    return null;
-                  } catch (e) {
-                    return 'Format jumlah tidak valid';
-                  }
-                },
-              ),
-              SizedBox(height: 24),
 
               // Submit Button
               ElevatedButton(

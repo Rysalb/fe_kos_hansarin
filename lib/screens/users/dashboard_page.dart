@@ -11,7 +11,7 @@ import 'pembayaran/bayar_sewa_screen.dart';
 import 'pembayaran/histori_pembayaran_screen.dart';
 import 'nomor_penting_screen.dart';
 import 'peraturan_kos_screen.dart';
-
+import 'package:intl/intl.dart';
 class DashboardPage extends StatefulWidget {
   @override
   _DashboardPageState createState() => _DashboardPageState();
@@ -96,6 +96,23 @@ class _DashboardPageState extends State<DashboardPage> {
                                 ),
                                 Text(
                                   _userProfile?['nomor_kamar']?.toString() ?? '-',
+                                ),
+                              ],
+                            ),
+                            // Add new row for last payment date
+                            SizedBox(height: 8),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Pembayaran Terakhir:',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                Text(
+                                  _userProfile?['pembayaran_terakhir'] != null
+                                      ? DateFormat('dd/MM/yyyy').format(
+                                          DateTime.parse(_userProfile!['pembayaran_terakhir']))
+                                      : '-',
                                 ),
                               ],
                             ),

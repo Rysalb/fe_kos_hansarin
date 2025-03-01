@@ -13,6 +13,8 @@ Future<Map<String, dynamic>> create({
   int? idPenyewa,
   String? metodePembayaran,
   int? idUser,
+  int? durasi,              // Add durasi parameter
+  String? tanggalKeluar,    // Add tanggalKeluar parameter
 }) async {
   try {
     final Map<String, dynamic> body = {
@@ -33,8 +35,16 @@ Future<Map<String, dynamic>> create({
 
     if (metodePembayaran != null) {
       body['metode_pembayaran'] = metodePembayaran;
-      // Simplified mapping - automatic payment is always ID 1
       body['id_metode'] = metodePembayaran == 'Dibayar' ? 1 : null;
+    }
+
+    // Add durasi and tanggalKeluar if provided
+    if (durasi != null) {
+      body['durasi'] = durasi;
+    }
+
+    if (tanggalKeluar != null) {
+      body['tanggal_keluar'] = tanggalKeluar;
     }
 
     final response = await http.post(
