@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:proyekkos/screens/admin/list_admin.dart';
 import '../../data/services/auth_service.dart';
 
 class AddAdminScreen extends StatefulWidget {
@@ -113,21 +114,31 @@ class _AddAdminScreenState extends State<AddAdminScreen> {
       appBar: PreferredSize(
         preferredSize: Size.fromHeight(50.0),
         child: AppBar(
-          title: Text(
-            'Tambahkan Akun Pengelola',
-            style: TextStyle(color: Colors.black),
+          title: Row(
+            children: [
+              Text(
+                'Tambahkan Akun Pengelola',
+                style: TextStyle(color: Colors.black, fontSize: 20),
+              ),
+              SizedBox(width: 12),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context, 
+                    MaterialPageRoute(builder: (context) => ListAdminScreen()),
+                  );
+                },
+                child: Image.asset(
+                  'assets/images/admin.png',
+                  width: 24,
+                  height: 24,
+                ),
+              ),
+            ],
           ),
           backgroundColor: Color(0xFFE7B789),
           elevation: 0,
           iconTheme: IconThemeData(color: Colors.black),
-          actions: [
-            IconButton(
-              icon: Icon(Icons.info_outline),
-              onPressed: () {
-                // Tampilkan informasi tambahan jika diperlukan
-              },
-            ),
-          ],
         ),
       ),
       body: SingleChildScrollView(
@@ -136,6 +147,7 @@ class _AddAdminScreenState extends State<AddAdminScreen> {
           key: _formKey,
           child: Column(
             children: [
+            
               TextFormField(
                 controller: _nameController,
                 decoration: InputDecoration(
@@ -270,4 +282,4 @@ class _AddAdminScreenState extends State<AddAdminScreen> {
     _confirmPasswordController.dispose();
     super.dispose();
   }
-} 
+}

@@ -4,6 +4,7 @@ import 'package:proyekkos/data/services/pemasukan_pengeluaran_service.dart';
 import 'package:intl/intl.dart';
 import 'package:proyekkos/screens/admin/kelola_penyewa/ubah_penyewa.dart';
 import 'package:proyekkos/screens/admin/kelola_kamar/pindah_kamar.dart';
+import 'package:proyekkos/screens/admin/pembukuan/tambah_pemasukan_pengeluaran_screen.dart';
 
 class DetailPenyewaPage extends StatefulWidget {
   final int idPenyewa;
@@ -216,8 +217,20 @@ class _DetailPenyewaPageState extends State<DetailPenyewaPage> {
       child: Column(
         children: [
           ElevatedButton(
-            onPressed: () {
-              // Implementasi untuk perpanjang sewa
+            onPressed: () async {
+              // Navigate to TambahPemasukanPengeluaranScreen
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => TambahPemasukanPengeluaranScreen(
+                    isPemasukan: true, // Set as pemasukan
+                  ),
+                ),
+              );
+              
+              if (result == true) {
+                _fetchData(); // Refresh data after adding payment
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Color(0xFF6B4B3E),
@@ -335,4 +348,4 @@ class _DetailPenyewaPageState extends State<DetailPenyewaPage> {
     final selisih = keluar.difference(sekarang).inDays;
     return selisih < 0 ? 'Sewa telah berakhir' : selisih.toString();
   }
-} 
+}

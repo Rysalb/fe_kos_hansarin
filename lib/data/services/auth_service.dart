@@ -368,4 +368,25 @@ class AuthService {
       throw Exception('Gagal mengirim link reset password');
     }
   }
+
+  Future<void> deleteUser(int userId) async {
+    try {
+      final token = await getToken();
+      if (token == null) throw Exception('Token tidak ditemukan');
+
+      final response = await http.delete(
+        Uri.parse('${ApiConstants.baseUrl}/user/$userId'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Gagal menghapus pengguna');
+      }
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
 }

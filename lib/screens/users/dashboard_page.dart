@@ -268,7 +268,14 @@ class _DashboardPageState extends State<DashboardPage> {
                 SizedBox(width: 12),
                 Text(
                   '${_getGreeting()}, ${_userProfile?['name'] ?? 'User'}!',
-                  style: TextStyle(color: Colors.black),
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: _userProfile != null && _userProfile!['name'].toString().length > 15 
+                      ? 14.0  // Smaller font for long names
+                      : 16.0, // Default font size
+                  ),
+                  overflow: TextOverflow.ellipsis, // Add ellipsis for very long names
+                  maxLines: 1, // Ensure single line
                 ),
               ],
             ),
