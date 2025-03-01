@@ -14,6 +14,7 @@ import 'package:proyekkos/data/services/kamar_service.dart';
 import 'package:proyekkos/widgets/dashboardAdmin_skeleton.dart';
 import 'package:intl/intl.dart';
 import 'package:proyekkos/screens/admin/metode_pembayaran/metode_pembayaran_screen.dart';
+import 'package:proyekkos/screens/admin/notifikasi/notifikasi_screen.dart';
 
 class AdminDashboardPage extends StatefulWidget {
   @override
@@ -197,7 +198,12 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with WidgetsBin
                 IconButton(
                   icon: Icon(Icons.notifications),
                   onPressed: () {
-                    print('Notifikasi ditekan');
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => NotifikasiScreen(),
+                      ),
+                    );
                   },
                 ),
               ],
