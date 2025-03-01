@@ -110,46 +110,45 @@ class PembayaranService {
   }
 
   Future<void> uploadBuktiPembayaran({
-    required String metodePembayaranId,
-    required File buktiPembayaran,
-    required String jumlahPembayaran,
-  }) async {
-    try {
-      final token = await getToken();
-      if (token == null) throw Exception('Token tidak ditemukan');
+  required String metodePembayaranId,
+  required File buktiPembayaran,
+  required String jumlahPembayaran,
+  required String keterangan,
+}) async {
+  try {
+    final token = await getToken();
+    if (token == null) throw Exception('Token tidak ditemukan');
 
-      var request = http.MultipartRequest(
-        'POST',
-        Uri.parse('${ApiConstants.baseUrl}/pembayaran/upload'),
-      );
-
-      request.headers.addAll({
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('${ApiConstants.baseUrl}/pembayaran/upload'),
+    )
+      ..headers.addAll({
         'Authorization': 'Bearer $token',
         'Accept': 'application/json',
-      });
-
-      request.fields['metode_pembayaran_id'] = metodePembayaranId;
-      request.fields['jumlah_pembayaran'] = jumlahPembayaran;
-      request.files.add(await http.MultipartFile.fromPath(
+      })
+      ..fields.addAll({
+        'metode_pembayaran_id': metodePembayaranId, // Make sure this matches the backend field name
+        'jumlah_pembayaran': jumlahPembayaran,
+        'keterangan': keterangan,
+      })
+      ..files.add(await http.MultipartFile.fromPath(
         'bukti_pembayaran',
         buktiPembayaran.path,
       ));
 
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
+    final response = await request.send();
+    final responseData = await response.stream.bytesToString();
+    print('upload response: $responseData');
 
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
-
-      if (response.statusCode != 200) {
-        final errorData = json.decode(response.body);
-        throw Exception(errorData['message'] ?? 'Gagal upload bukti pembayaran');
-      }
-    } catch (e) {
-      print('upload error: $e');
-      throw Exception('Gagal upload bukti pembayaran: $e');
+    if (response.statusCode != 200) {
+      throw Exception('Gagal upload bukti pembayaran: ${json.decode(responseData)['message']}');
     }
+  } catch (e) {
+    print('upload error: $e');
+    throw Exception('Gagal upload bukti pembayaran: $e');
   }
+}
 
 Future<Map<String, dynamic>> uploadBuktiPembayaranOrder({
   required String metodePembayaranId,
@@ -252,4 +251,37 @@ Future<Map<String, dynamic>> uploadBuktiPembayaranOrder({
       throw Exception('Error: $e');
     }
   }
+
+ Future<Map<String, dynamic>> getUserKamarDetail() async {
+  try {
+    final token = await getToken();
+    if (token == null) throw Exception('Token tidak ditemukan');
+
+    // Update endpoint to match the route in api.php
+    final response = await http.get(
+      Uri.parse('${ApiConstants.baseUrl}/penyewa/kamar-detail'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      },
+    );
+
+    print('Kamar detail response: ${response.body}');
+
+    if (response.statusCode == 200) {
+      final responseData = json.decode(response.body);
+      if (responseData['status'] == true && responseData['data'] != null) {
+        return responseData['data'];
+      }
+      throw Exception(responseData['message'] ?? 'Gagal memuat detail kamar');
+    } else if (response.statusCode == 404) {
+      throw Exception('Data kamar tidak ditemukan');
+    } else {
+      throw Exception('Gagal memuat detail kamar: ${response.statusCode}');
+    }
+  } catch (e) {
+    print('Error in getUserKamarDetail: $e');
+    throw Exception('Gagal memuat detail kamar: $e');
+  }
+}
 }

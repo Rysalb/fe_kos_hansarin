@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:proyekkos/screens/users/order_menu/cart_screen.dart';
 import 'package:proyekkos/screens/users/order_menu/menu_list_screen.dart';
+import 'package:proyekkos/screens/users/order_menu/order_history_screen.dart';
 
 class PesanMakananScreen extends StatelessWidget {
   @override
@@ -19,7 +20,12 @@ class PesanMakananScreen extends StatelessWidget {
                   children: [
                     GestureDetector(
                       onTap: () {
-                     
+                      Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => OrderHistoryScreen(),
+      ),
+    );
                       },
                       child: Image.asset(
                         'assets/images/dashboard_icon/verifikasi_pembayaran.png',

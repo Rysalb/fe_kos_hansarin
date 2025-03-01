@@ -108,35 +108,93 @@ class _PembayaranScreenState extends State<PembayaranScreen> {
 
   Future<void> _saveQRToGallery(String qrUrl) async {
     try {
-      // Request storage permission
-      if (await Permission.storage.request().isGranted) {
+      // Request storage permissions
+      Map<Permission, PermissionStatus> statuses = await [
+        Permission.storage,
+        Permission.photos,
+        Permission.manageExternalStorage,
+      ].request();
+
+      if (statuses[Permission.storage]!.isGranted || 
+          statuses[Permission.photos]!.isGranted) {
         final response = await http.get(Uri.parse(qrUrl));
         
-        // Get downloads directory
-        final directory = await getExternalStorageDirectory();
-        final fileName = 'qr_code_${DateTime.now().millisecondsSinceEpoch}.png';
-        final filePath = '${directory?.path}/$fileName';
-        
-        // Save file
-        final file = File(filePath);
-        await file.writeAsBytes(response.bodyBytes);
+        // Get the Downloads directory
+        Directory? directory;
+        if (Platform.isAndroid) {
+          // Get the Downloads directory path
+          directory = Directory('/storage/emulated/0/Download');
+          // Create directory if it doesn't exist
+          if (!await directory.exists()) {
+            directory = await getExternalStorageDirectory();
+          }
+        } else {
+          directory = await getApplicationDocumentsDirectory();
+        }
 
-        // Notify media scanner to make file visible in gallery
-        await _scanFile(filePath);
+        if (directory != null) {
+          final fileName = 'qr_code_${DateTime.now().millisecondsSinceEpoch}.png';
+          final filePath = '${directory.path}/$fileName';
+          
+          final file = File(filePath);
+          await file.writeAsBytes(response.bodyBytes);
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('QR Code berhasil disimpan ke Downloads'))
-        );
+          // Notify media scanner
+          await _scanFile(filePath);
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('QR Code berhasil disimpan ke folder Download'),
+              action: SnackBarAction(
+                label: 'Lihat',
+                onPressed: () async {
+                  if (Platform.isAndroid) {
+                    await _openDownloadsFolder();
+                  }
+                },
+              ),
+            )
+          );
+        }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Izin penyimpanan diperlukan'))
+        // Show settings dialog
+        final shouldOpenSettings = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text('Izin Diperlukan'),
+            content: Text('Aplikasi memerlukan izin untuk menyimpan QR Code ke Downloads.'),
+            actions: [
+              TextButton(
+                child: Text('Tidak'),
+                onPressed: () => Navigator.pop(context, false),
+              ),
+              TextButton(
+                child: Text('Buka Pengaturan'),
+                onPressed: () => Navigator.pop(context, true),
+              ),
+            ],
+          ),
         );
+
+        if (shouldOpenSettings == true) {
+          await openAppSettings();
+        }
       }
     } catch (e) {
       print('Error saving QR: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal menyimpan QR Code'))
+        SnackBar(content: Text('Gagal menyimpan QR Code: ${e.toString()}'))
       );
+    }
+  }
+
+  // Add method to open Downloads folder
+  Future<void> _openDownloadsFolder() async {
+    try {
+      final platform = MethodChannel('com.example.proyekkos/file_manager');
+      await platform.invokeMethod('openDownloads');
+    } catch (e) {
+      print('Error opening Downloads folder: $e');
     }
   }
 

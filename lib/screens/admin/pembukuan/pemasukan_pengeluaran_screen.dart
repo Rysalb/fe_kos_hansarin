@@ -275,6 +275,7 @@ class _PemasukanPengeluaranScreenState extends State<PemasukanPengeluaranScreen>
                                                   '• Gunakan dropdown filter untuk melihat transaksi berdasarkan periode',
                                                   '• Gunakan kalender untuk melihat transaksi pada tanggal tertentu',
                                                   '• Lihat rekap total pemasukan dan pengeluaran di bagian atas',
+                                                  '• Lihat rekap total akan di reset setiap 1 tahun',
                                                 ],
                                               ),
                                             ],
