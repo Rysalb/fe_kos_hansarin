@@ -84,12 +84,6 @@ class _ListKatalogScreenState extends State<ListKatalogScreen> {
           icon: Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.info_outline),
-            onPressed: () {},
-          ),
-        ],
       ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
