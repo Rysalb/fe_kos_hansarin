@@ -46,6 +46,7 @@ class _UploadBuktiScreenState extends State<UploadBuktiScreen> {
           'timestamp': DateTime.now().toIso8601String(),
           'amount': totalPembayaran,
           'is_order_menu': true,
+          'target_role': 'admin', // Make it explicit
         },
       );
       print('Notifikasi berhasil dikirim ke admin');

@@ -249,17 +249,6 @@ class _NotifikasiScreenState extends State<NotifikasiScreen> {
                     },
                   ),
       ),
-      // Tambah tombol untuk test notifikasi
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          await _notificationService.testNotification();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Test notification sent')),
-          );
-        },
-        child: Icon(Icons.notification_add),
-        backgroundColor: Color(0xFF4A2F1C),
-      ),
     );
   }
 

@@ -8,6 +8,7 @@ class NotificationModel {
   final DateTime createdAt;
   final bool isRead;
   final Map<String, dynamic>? data;
+  final String? targetRole; // Add this field
 
   const NotificationModel({
     this.id,
@@ -17,6 +18,7 @@ class NotificationModel {
     required this.createdAt,
     this.isRead = false,
     this.data,
+    this.targetRole, // Add this
   });
 
   factory NotificationModel.fromJson(Map<String, dynamic> json) {

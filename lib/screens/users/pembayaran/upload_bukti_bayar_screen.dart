@@ -132,6 +132,7 @@ class _UploadBuktiBayarScreenState extends State<UploadBuktiBayarScreen> {
         data: {
           'timestamp': DateTime.now().toIso8601String(),
           'amount': jumlahPembayaran,
+          'target_role': 'admin', 
         },
       );
       print('Notifikasi berhasil dikirim ke admin');

@@ -494,29 +494,7 @@ class _AdminDashboardContentState extends State<AdminDashboardContent> {
                           MaterialPageRoute(builder: (context) => PeraturanKosScreen()),
                         );},
                     ),
-                    ElevatedButton(
-                      onPressed: () async {
-                        final notificationService = NotificationService();
-                        
-                        // Check and print OneSignal status before sending
-                        final tags = await OneSignal.User.getTags();
-                        print('Current OneSignal tags: $tags');
-                        print('Subscription opted in: ${OneSignal.User.pushSubscription.optedIn}');
-                        print('Subscription ID: ${OneSignal.User.pushSubscription.id}');
-                        print('Subscription token: ${OneSignal.User.pushSubscription.token}');
-                        
-                        // Send test notification
-                        await notificationService.testNotification();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Test notification sent - check logs')),
-                        );
-                      },
-                      child: Text('Test Notification'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFF4A2F1C),
-                        foregroundColor: Colors.white,
-                      ),
-                    ),
+              
                   ],
                 ),
 

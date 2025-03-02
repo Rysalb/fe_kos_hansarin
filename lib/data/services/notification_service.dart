@@ -146,18 +146,22 @@ class NotificationService {
     try {
       print('📱 Sending notification to admins: $title - $message');
       
-      // First save locally for immediate feedback
-      final localNotification = NotificationModel(
-        title: title,
-        message: message,
-        type: type,
-        createdAt: DateTime.now(),
-        data: data,
-      );
-      
-      await _saveNotificationLocally(localNotification);
-      print('📱 Notification saved locally');
-      _updateUnreadCount();
+      // First save locally ONLY if the current user is an admin
+      final userRole = await _getCurrentUserRole();
+      if (userRole == 'admin') {
+        final localNotification = NotificationModel(
+          title: title,
+          message: message,
+          type: type,
+          createdAt: DateTime.now(),
+          data: data,
+          targetRole: 'admin', // Specify this is for admins only
+        );
+        
+        await _saveNotificationLocally(localNotification);
+        print('📱 Notification saved locally for admin');
+        _updateUnreadCount();
+      }
       
       // Send via OneSignal REST API
       final Uri apiUrl = Uri.parse('https://onesignal.com/api/v1/notifications');
@@ -410,6 +414,7 @@ class NotificationService {
         'created_at': n.createdAt.toIso8601String(),
         'is_read': n.isRead,
         'data': jsonEncode(n.data ?? {}),
+        'target_role': n.targetRole, // Add this
       })).toList();
       
       await prefs.setStringList(_notificationsKey, jsonList);
@@ -423,11 +428,12 @@ class NotificationService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final jsonList = prefs.getStringList(_notificationsKey) ?? [];
+      final userRole = await _getCurrentUserRole();
       
       return jsonList.map((jsonStr) {
         try {
           final Map<String, dynamic> json = jsonDecode(jsonStr);
-          return NotificationModel(
+          final notification = NotificationModel(
             id: json['id'],
             title: json['title'] ?? '',
             message: json['message'] ?? '',
@@ -439,17 +445,22 @@ class NotificationService {
             data: json['data'] != null 
                 ? jsonDecode(json['data']) 
                 : null,
+            targetRole: json['target_role'],
           );
+          
+          // Skip notifications meant specifically for the other role
+          if (notification.targetRole != null && 
+              notification.targetRole != userRole && 
+              userRole != null) {
+            return null;
+          }
+          
+          return notification;
         } catch (e) {
           print('Error parsing notification JSON: $e');
-          return NotificationModel(
-            title: 'Error',
-            message: 'Could not parse notification',
-            type: 'general',
-            createdAt: DateTime.now(),
-          );
+          return null;
         }
-      }).toList();
+      }).whereType<NotificationModel>().toList(); // Filter out null values
     } catch (e) {
       print('Error getting local notifications: $e');
       return [];
@@ -572,5 +583,10 @@ class NotificationService {
     } catch (e) {
       print('Error sending test notification: $e');
     }
+  }
+
+  Future<String?> _getCurrentUserRole() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('user_role');
   }
 }

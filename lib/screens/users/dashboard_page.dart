@@ -205,25 +205,7 @@ class _DashboardPageState extends State<DashboardPage> {
                           },
                         ),
 
-                      // Add this in a user settings or profile page
-ElevatedButton(
-  onPressed: () async {
-    final prefs = await SharedPreferences.getInstance();
-    final userId = prefs.getString('user_id');
-    if (userId != null) {
-      final notificationService = NotificationService();
-      await notificationService.testUserNotification(userId);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Test notification sent'))
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('User ID not found'))
-      );
-    }
-  },
-  child: Text('Test Notifications'),
-)
+                     
                       ],
                     ),
                   ],
