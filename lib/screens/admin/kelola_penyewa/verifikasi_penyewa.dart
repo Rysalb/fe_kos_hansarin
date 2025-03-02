@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:proyekkos/data/services/auth_service.dart';
 import 'package:proyekkos/data/services/pemasukan_pengeluaran_service.dart';
 import 'package:proyekkos/widgets/custom_info_dialog.dart';
+import 'package:proyekkos/data/services/notification_service.dart';
 
 class VerifikasiPenyewaScreen extends StatefulWidget {
   @override
@@ -12,6 +13,7 @@ class VerifikasiPenyewaScreen extends StatefulWidget {
 class _VerifikasiPenyewaScreenState extends State<VerifikasiPenyewaScreen> {
   final AuthService _authService = AuthService();
   final PemasukanPengeluaranService _pemasukanService = PemasukanPengeluaranService();
+  final NotificationService _notificationService = NotificationService();
   List<Map<String, dynamic>> _pendingUsers = [];
   bool _isLoading = true;
 
@@ -243,6 +245,23 @@ class _VerifikasiPenyewaScreenState extends State<VerifikasiPenyewaScreen> {
 
   Future<void> _handleVerifikasi(Map<String, dynamic> user) async {
     await _showVerifikasiDialog(user);
+    
+    // After verification succeeds, send a notification to the user
+    try {
+      // Send notification to the user that they've been verified
+      await _notificationService.sendNotificationToSpecificUser(
+        userId: user['id_user'].toString(), // Use the specific user ID
+        title: 'Akun Diverifikasi',
+        message: 'Selamat! Akun Anda telah diverifikasi untuk kamar ${user['penyewa']['unit_kamar']['nomor_kamar']}',
+        type: 'tenant_verification',
+        data: {
+          'id_user': user['id_user'],
+          'id_penyewa': user['penyewa']['id_penyewa'],
+        },
+      );
+    } catch (e) {
+      print('Error sending verification notification: $e');
+    }
   }
 
   Future<void> _handleTolak(Map<String, dynamic> user) async {

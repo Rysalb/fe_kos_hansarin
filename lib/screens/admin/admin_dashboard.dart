@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:proyekkos/screens/admin/bottom_navbar/account_screen.dart';
 import 'package:proyekkos/screens/admin/bottom_navbar/contact_screen.dart';
 import 'package:proyekkos/screens/admin/bottom_navbar/katalog_makanan.dart';
@@ -15,6 +16,7 @@ import 'package:proyekkos/widgets/dashboardAdmin_skeleton.dart';
 import 'package:intl/intl.dart';
 import 'package:proyekkos/screens/admin/metode_pembayaran/metode_pembayaran_screen.dart';
 import 'package:proyekkos/screens/admin/notifikasi/notifikasi_screen.dart';
+import 'package:proyekkos/data/services/notification_service.dart';
 
 class AdminDashboardPage extends StatefulWidget {
   @override
@@ -25,6 +27,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with WidgetsBin
   int _selectedIndex = 0;
   final AuthService _authService = AuthService();
   final KamarService _kamarService = KamarService();
+  final NotificationService _notificationService = NotificationService(); // Tambahkan ini
   Map<String, dynamic>? _adminProfile;
   Map<String, dynamic>? _kamarStats;
   List<Map<String, dynamic>> _expiringRooms = [];
@@ -37,6 +40,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with WidgetsBin
     WidgetsBinding.instance.addObserver(this);
     _initializeScreens();
     _loadData();
+    
+    // Add this to set role tag when admin dashboard loads
+    _setAdminRoleTag();
   }
 
   @override
@@ -137,6 +143,25 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with WidgetsBin
     }
   }
 
+  Future<void> _setAdminRoleTag() async {
+    try {
+      // Set the admin role tag
+      await OneSignal.User.addTagWithKey('role', 'admin');
+      print('Set admin role tag on dashboard load');
+      
+      // Print all current tags for debugging
+      final tags = await OneSignal.User.getTags();
+      print('Current OneSignal tags: $tags');
+      
+      // Get and print subscription status
+      print('Subscription opted in: ${OneSignal.User.pushSubscription.optedIn}');
+      print('Subscription ID: ${OneSignal.User.pushSubscription.id}');
+      print('Subscription token: ${OneSignal.User.pushSubscription.token}');
+    } catch (e) {
+      print('Error setting admin role tag: $e');
+    }
+  }
+
   String _getGreeting() {
     var hour = DateTime.now().hour;
     if (hour < 12) return 'Selamat Pagi';
@@ -195,16 +220,55 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with WidgetsBin
               elevation: 0,
               iconTheme: IconThemeData(color: Colors.black),
               actions: [
-                IconButton(
-                  icon: Icon(Icons.notifications),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => NotifikasiScreen(),
-                      ),
-                    );
-                  },
+                // Ganti IconButton dengan Stack untuk menambahkan badge notifikasi
+                Stack(
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.notifications),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => NotifikasiScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    // Tambahkan StreamBuilder untuk menampilkan badge
+                    StreamBuilder<int>(
+                      stream: NotificationService().unreadCountStream,
+                      builder: (context, snapshot) {
+                        final unreadCount = snapshot.data ?? 0;
+                        if (unreadCount == 0) {
+                          return SizedBox.shrink();
+                        }
+                        return Positioned(
+                          right: 0,
+                          top: 0,
+                          child: Container(
+                            padding: EdgeInsets.all(2),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            constraints: BoxConstraints(
+                              minWidth: 16,
+                              minHeight: 16,
+                            ),
+                            child: Text(
+                              unreadCount > 9 ? '9+' : '$unreadCount',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -429,6 +493,29 @@ class _AdminDashboardContentState extends State<AdminDashboardContent> {
                           context,
                           MaterialPageRoute(builder: (context) => PeraturanKosScreen()),
                         );},
+                    ),
+                    ElevatedButton(
+                      onPressed: () async {
+                        final notificationService = NotificationService();
+                        
+                        // Check and print OneSignal status before sending
+                        final tags = await OneSignal.User.getTags();
+                        print('Current OneSignal tags: $tags');
+                        print('Subscription opted in: ${OneSignal.User.pushSubscription.optedIn}');
+                        print('Subscription ID: ${OneSignal.User.pushSubscription.id}');
+                        print('Subscription token: ${OneSignal.User.pushSubscription.token}');
+                        
+                        // Send test notification
+                        await notificationService.testNotification();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Test notification sent - check logs')),
+                        );
+                      },
+                      child: Text('Test Notification'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color(0xFF4A2F1C),
+                        foregroundColor: Colors.white,
+                      ),
                     ),
                   ],
                 ),

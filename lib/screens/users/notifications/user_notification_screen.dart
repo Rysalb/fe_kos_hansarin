@@ -3,15 +3,16 @@ import 'package:intl/intl.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 import '../../../data/models/notification_model.dart';
 import '../../../data/services/notification_service.dart';
-import '../verif_pembayaran/verifikasi_pembayaran_screen.dart';
-import '../kelola_penyewa/verifikasi_penyewa.dart';
+import '../pembayaran/bayar_sewa_screen.dart';
+import '../pembayaran/histori_pembayaran_screen.dart';
+import '../order_menu/order_history_screen.dart';
 
-class NotifikasiScreen extends StatefulWidget {
+class UserNotificationScreen extends StatefulWidget {
   @override
-  _NotifikasiScreenState createState() => _NotifikasiScreenState();
+  _UserNotificationScreenState createState() => _UserNotificationScreenState();
 }
 
-class _NotifikasiScreenState extends State<NotifikasiScreen> {
+class _UserNotificationScreenState extends State<UserNotificationScreen> {
   final NotificationService _notificationService = NotificationService();
   List<NotificationModel> _notifications = [];
   bool _isLoading = true;
@@ -21,87 +22,93 @@ class _NotifikasiScreenState extends State<NotifikasiScreen> {
     super.initState();
     _loadNotifications();
     _setupNotificationListeners();
-    // Pastikan role tag admin sudah terpasang
-    _setAdminRoleTag();
   }
-  
+
   void _setupNotificationListeners() {
     try {
       // OneSignal notification click listener
       OneSignal.Notifications.addClickListener((event) {
-        print('ADMIN NOTIFICATION CLICK LISTENER CALLED WITH EVENT: $event');
+        print('USER NOTIFICATION CLICK LISTENER CALLED WITH EVENT: $event');
         final data = event.notification.additionalData;
         if (data != null) {
           final type = data['type']?.toString();
-          _handleNavigationByType(type);
+          _handleNavigationByType(type, data);
         }
       });
 
       // OneSignal foreground notification listener
       OneSignal.Notifications.addForegroundWillDisplayListener((event) {
-        print('ADMIN NOTIFICATION WILL DISPLAY: ${event.notification.jsonRepresentation()}');
-        
-        // Let it display
+        print('USER NOTIFICATION WILL DISPLAY LISTENER CALLED');
+        // Prevent default display to handle it manually
+        event.preventDefault();
+        // Display notification after handling
         event.notification.display();
-        
-        // Reload notifications from storage
+        // Refresh notification list
         _loadNotifications();
       });
     } catch (e) {
       print('Error setting up notification listeners: $e');
     }
   }
-  
-  Future<void> _setAdminRoleTag() async {
-    try {
-      await OneSignal.User.addTagWithKey('role', 'admin');
-      print('Set admin role tag in NotifikasiScreen');
-      
-      // Print all current tags to verify
-      final tags = await OneSignal.User.getTags();
-      print('Current OneSignal tags: $tags');
-      
-      // Status pendaftaran
-      final status = OneSignal.User.pushSubscription.optedIn;
-      final id = OneSignal.User.pushSubscription.id;
-      print('Subscription status: $status, ID: $id');
-    } catch (e) {
-      print('Error setting admin role tag: $e');
-    }
-  }
 
-  void _handleNavigationByType(String? type) {
+  void _handleNavigationByType(String? type, Map<String, dynamic>? data) {
     switch (type) {
-      case 'payment_verification':
-        _navigateToPaymentVerification();
+      case 'payment_verification': 
+        _navigateToPaymentHistory();
         break;
-      case 'tenant_verification':
-        _navigateToTenantVerification();
+      case 'payment_rejected': // Add this case for rejected payments
+        _showRejectionDialog(data);
+        _navigateToPaymentHistory();
+        break;
+      case 'order_verification':
+        _navigateToOrderHistory();
+        break;
+      case 'checkout_reminder':
+        _navigateToBayarSewa();
+        break;
+      case 'tenant_verification': // Add this case
+        // Navigate to user dashboard or another appropriate screen
+        // For example, just show a message or navigate to main screen
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Akun Anda telah diverifikasi!'))
+        );
         break;
       default:
         print('Unknown notification type: $type');
     }
   }
 
-  void _navigateToPaymentVerification() {
+  void _navigateToPaymentHistory() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => VerifikasiPembayaranScreen()),
+      MaterialPageRoute(builder: (context) => HistoriPembayaranScreen()),
     ).then((_) => _loadNotifications());
   }
 
-  void _navigateToTenantVerification() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => VerifikasiPenyewaScreen()),
-    ).then((_) => _loadNotifications());
+  void _navigateToOrderHistory() {
+    try {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => OrderHistoryScreen()),
+      ).then((_) => _loadNotifications());
+    } catch (e) {
+      print("Error navigating to order history: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Tidak dapat membuka riwayat pesanan'))
+      );
+    }
   }
 
+  void _navigateToBayarSewa() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => BayarSewaScreen()),
+    ).then((_) => _loadNotifications());
+  }
+  
   Future<void> _loadNotifications() async {
     try {
       final notifications = await _notificationService.getNotifications();
-      print('Loaded ${notifications.length} notifications');
-      
       if (mounted) {
         setState(() {
           _notifications = notifications;
@@ -116,6 +123,19 @@ class _NotifikasiScreenState extends State<NotifikasiScreen> {
     }
   }
 
+  Color _getNotificationColor(String type) {
+    switch (type) {
+      case 'checkout_reminder':
+        return Color(0xFFFFE0E0); // Light red for urgent reminders
+      case 'payment_verification':
+        return Color(0xFFE0F7FA); // Light blue for payment notifications
+      case 'order_verification':
+        return Color(0xFFF0F4C3); // Light yellow for food orders
+      default:
+        return Color(0xFFFFE5CC); // Default color
+    }
+  }
+
   void _handleNotificationTap(NotificationModel notification) async {
     try {
       if (notification.id != null) {
@@ -123,33 +143,86 @@ class _NotifikasiScreenState extends State<NotifikasiScreen> {
       }
       
       // Navigate based on notification type
-      switch (notification.type) {
-        case 'payment_verification':
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => VerifikasiPembayaranScreen()),
-          ).then((_) => _loadNotifications());
-          break;
-        case 'tenant_verification':
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => VerifikasiPenyewaScreen()),
-          ).then((_) => _loadNotifications());
-          break;
-        default:
-          print('Unknown notification type: ${notification.type}');
-      }
+      _handleNavigationByType(notification.type, notification.data);
     } catch (e) {
       print('Error handling notification tap: $e');
     }
   }
 
-  @override
-  void dispose() {
-    // Make sure to dispose any resources
-    super.dispose();
+  Widget _buildCheckoutReminderBadge(NotificationModel notification) {
+    if (notification.type != 'checkout_reminder') {
+      return SizedBox.shrink();
+    }
+
+    String daysLeft = "";
+    if (notification.data != null && notification.data!.containsKey('days_left')) {
+      daysLeft = notification.data!['days_left'].toString();
+    }
+
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.red,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        daysLeft == "0" ? "HARI INI" : "$daysLeft HARI LAGI",
+        style: TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+          fontSize: 10,
+        ),
+      ),
+    );
   }
 
+  // Add this new method to show rejection details
+  void _showRejectionDialog(Map<String, dynamic>? data) {
+    if (data == null) return;
+    
+    String reason = data['rejection_reason']?.toString() ?? 'Tidak ada alasan yang diberikan';
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Pembayaran Ditolak'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Alasan Penolakan:'),
+            SizedBox(height: 8),
+            Text(reason, style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
+            SizedBox(height: 16),
+            Text('Silahkan upload ulang bukti pembayaran sesuai dengan ketentuan.'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Tutup'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _navigateToPaymentHistory();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Color(0xFF4A2F1C),
+            ),
+            child: Text('Lihat Riwayat Pembayaran'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    // Clean up resources if needed
+    super.dispose();
+  }
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -207,7 +280,9 @@ class _NotifikasiScreenState extends State<NotifikasiScreen> {
                                 width: 1.0,
                               ),
                             ),
-                            color: notification.isRead ? null : Color(0xFFFFE5CC),
+                            color: notification.isRead 
+                                ? null 
+                                : _getNotificationColor(notification.type),
                           ),
                           child: ListTile(
                             contentPadding: EdgeInsets.symmetric(
@@ -215,13 +290,22 @@ class _NotifikasiScreenState extends State<NotifikasiScreen> {
                               vertical: 8,
                             ),
                             leading: _getNotificationIcon(notification.type),
-                            title: Text(
-                              notification.title,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: notification.isRead ? FontWeight.normal : FontWeight.bold,
-                                color: Colors.black87,
-                              ),
+                            title: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    notification.title,
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: notification.isRead 
+                                          ? FontWeight.normal 
+                                          : FontWeight.bold,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                ),
+                                _buildCheckoutReminderBadge(notification),
+                              ],
                             ),
                             subtitle: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -249,21 +333,9 @@ class _NotifikasiScreenState extends State<NotifikasiScreen> {
                     },
                   ),
       ),
-      // Tambah tombol untuk test notifikasi
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          await _notificationService.testNotification();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Test notification sent')),
-          );
-        },
-        child: Icon(Icons.notification_add),
-        backgroundColor: Color(0xFF4A2F1C),
-      ),
     );
   }
 
-  // Add icon for different notification types
   Widget _getNotificationIcon(String type) {
     switch (type) {
       case 'payment_verification':
@@ -271,10 +343,15 @@ class _NotifikasiScreenState extends State<NotifikasiScreen> {
           backgroundColor: Colors.blue[100],
           child: Icon(Icons.payment, color: Colors.blue),
         );
-      case 'tenant_verification':
+      case 'checkout_reminder':
         return CircleAvatar(
-          backgroundColor: Colors.green[100],
-          child: Icon(Icons.person, color: Colors.green),
+          backgroundColor: Colors.red[100],
+          child: Icon(Icons.access_time, color: Colors.red),
+        );
+      case 'order_verification':
+        return CircleAvatar(
+          backgroundColor: Colors.amber[100],
+          child: Icon(Icons.fastfood, color: Colors.amber),
         );
       default:
         return CircleAvatar(

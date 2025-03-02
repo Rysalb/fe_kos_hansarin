@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/models/user_model.dart';
 import '../../data/services/auth_service.dart';
@@ -35,6 +36,17 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           email: response['user']['email'],
           role: response['user']['role'],
         );
+
+        // After successful login
+        final userId = response['user']['id_user'].toString();
+        // Set user_id tag for OneSignal
+        await OneSignal.User.addTagWithKey('user_id', userId);
+        // Set role tag
+        await OneSignal.User.addTagWithKey('role', 'user');
+        print('Set user tags: user_id=$userId, role=user');
+
+        // Save to shared preferences for persistent storage
+        await prefs.setString('user_id', userId);
         
         emit(AuthSuccess(user));
       } catch (e) {

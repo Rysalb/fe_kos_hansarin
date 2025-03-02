@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:proyekkos/data/services/pembayaran_service.dart';
 import 'package:proyekkos/screens/admin/verif_pembayaran/riwayat_pembayaran_screen.dart';
 import 'dart:io';
+import 'package:proyekkos/data/services/notification_service.dart';
 
 class VerifikasiPembayaranScreen extends StatefulWidget {
   @override
@@ -11,6 +12,7 @@ class VerifikasiPembayaranScreen extends StatefulWidget {
 
 class _VerifikasiPembayaranScreenState extends State<VerifikasiPembayaranScreen> {
   final PembayaranService _service = PembayaranService();
+  final NotificationService _notificationService = NotificationService();
   bool _isLoading = true;
   List<Map<String, dynamic>> _pembayaranList = [];
 
@@ -267,6 +269,17 @@ class _VerifikasiPembayaranScreenState extends State<VerifikasiPembayaranScreen>
           jumlahPembayaran: jumlahPembayaran,
         );
 
+        // Send notification to the specific user about the payment verification
+        await _notificationService.sendNotificationToSpecificUser(
+          userId: pembayaran['penyewa']['user']['id_user'].toString(), // Use the specific user ID
+          title: 'Pembayaran Diverifikasi',
+          message: 'Pembayaran untuk ${pembayaran['keterangan'] == 'Order Menu' ? 'pesanan makanan' : 'sewa kamar'} Anda telah diverifikasi',
+          type: 'payment_verification',
+          data: {
+            'id_pembayaran': pembayaran['id_pembayaran'],
+          },
+        );
+
         await _loadPembayaran();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Pembayaran berhasil diverifikasi')),
@@ -279,7 +292,7 @@ class _VerifikasiPembayaranScreenState extends State<VerifikasiPembayaranScreen>
     }
   }
 
-  Future<void> _showTolakConfirmation(int idPembayaran) async {
+  Future<void> _showTolakConfirmation(Map<String, dynamic> pembayaran) async {
     final controller = TextEditingController();
     
     final result = await showDialog<String>(
@@ -322,10 +335,23 @@ class _VerifikasiPembayaranScreenState extends State<VerifikasiPembayaranScreen>
       try {
         await _service.verifikasi(
           jumlahPembayaran: 0.0,
-          idPembayaran: idPembayaran,
+          idPembayaran: pembayaran['id_pembayaran'],
           statusVerifikasi: 'rejected',
           keterangan: result,
         );
+        
+        // Send notification to the user about the rejected payment
+        await _notificationService.sendNotificationToSpecificUser(
+          userId: pembayaran['penyewa']['user']['id_user'].toString(),
+          title: 'Pembayaran Ditolak',
+          message: 'Pembayaran untuk ${pembayaran['keterangan'] == 'Order Menu' ? 'pesanan makanan' : 'sewa kamar'} Anda ditolak: $result',
+          type: 'payment_rejected', // Use a distinct type for rejected payments
+          data: {
+            'id_pembayaran': pembayaran['id_pembayaran'],
+            'rejection_reason': result,
+          },
+        );
+        
         await _loadPembayaran();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Pembayaran berhasil ditolak')),
@@ -388,7 +414,7 @@ class _VerifikasiPembayaranScreenState extends State<VerifikasiPembayaranScreen>
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 ElevatedButton(
-                  onPressed: () => _showTolakConfirmation(pembayaran['id_pembayaran']),
+                  onPressed: () => _showTolakConfirmation(pembayaran), // Pass the entire pembayaran object
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red,
                     padding: EdgeInsets.symmetric(horizontal: 24),

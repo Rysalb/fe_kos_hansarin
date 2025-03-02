@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:proyekkos/data/services/pembayaran_service.dart';
+import 'package:proyekkos/data/services/notification_service.dart'; // Tambahkan ini
 import 'dart:io';
 import 'package:intl/intl.dart';
 
@@ -11,7 +12,8 @@ class UploadBuktiBayarScreen extends StatefulWidget {
 
 class _UploadBuktiBayarScreenState extends State<UploadBuktiBayarScreen> {
   final PembayaranService _service = PembayaranService();
-  final TextEditingController _jumlahController = TextEditingController(); // Add this
+  final NotificationService _notificationService = NotificationService(); // Tambahkan ini
+  final TextEditingController _jumlahController = TextEditingController();
   String? _selectedMetode;
   File? _image;
   bool _isLoading = false;
@@ -120,6 +122,24 @@ class _UploadBuktiBayarScreenState extends State<UploadBuktiBayarScreen> {
     }
   }
 
+  // Metode untuk mengirim notifikasi ke admin
+  Future<void> _sendNotificationToAdmin(String jumlahPembayaran, String keterangan) async {
+    try {
+      await _notificationService.sendNotificationToAdmins(
+        title: 'Pembayaran Sewa Baru',
+        message: 'Pembayaran sewa kamar baru menunggu verifikasi: $keterangan',
+        type: 'payment_verification',
+        data: {
+          'timestamp': DateTime.now().toIso8601String(),
+          'amount': jumlahPembayaran,
+        },
+      );
+      print('Notifikasi berhasil dikirim ke admin');
+    } catch (e) {
+      print('Gagal mengirim notifikasi ke admin: $e');
+    }
+  }
+
   Future<void> _uploadBuktiPembayaran() async {
     if (_selectedMetode == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -152,12 +172,15 @@ class _UploadBuktiBayarScreenState extends State<UploadBuktiBayarScreen> {
       // Create keterangan from selected duration and price
       final keterangan = 'Pembayaran sewa ${selectedOption['durasi']} - Rp ${NumberFormat('#,###').format(double.parse(_selectedHargaSewa!))}';
 
-      await _service.uploadBuktiPembayaran(
+      final response = await _service.uploadBuktiPembayaran(
         metodePembayaranId: _selectedMetode!,
         buktiPembayaran: _image!,
         jumlahPembayaran: _selectedHargaSewa!,
-        keterangan: keterangan, // Add keterangan parameter
+        keterangan: keterangan,
       );
+
+      // Kirim notifikasi ke admin setelah upload berhasil
+      await _sendNotificationToAdmin(_selectedHargaSewa!, keterangan);
 
       showDialog(
         context: context,
@@ -217,7 +240,6 @@ class _UploadBuktiBayarScreenState extends State<UploadBuktiBayarScreen> {
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString())),
-      
       );
         print('Error uploading bukti pembayaran: $e');
     } finally {

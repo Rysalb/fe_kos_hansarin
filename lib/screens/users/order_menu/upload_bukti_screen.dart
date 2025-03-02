@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:proyekkos/data/services/pembayaran_service.dart';
+import 'package:proyekkos/data/services/notification_service.dart'; // Tambahkan ini
 import 'package:proyekkos/screens/users/order_menu/order_success_page.dart';
 
 class UploadBuktiScreen extends StatefulWidget {
@@ -8,7 +9,7 @@ class UploadBuktiScreen extends StatefulWidget {
   final String idMetode;
   final double totalPembayaran;
   final List<Map<String, dynamic>> pesanan; 
-  final int idPenyewa; // Add this field
+  final int idPenyewa;
 
   const UploadBuktiScreen({
     Key? key,
@@ -16,7 +17,7 @@ class UploadBuktiScreen extends StatefulWidget {
     required this.idMetode,
     required this.totalPembayaran,
     required this.pesanan, 
-    required this.idPenyewa, // Add this parameter
+    required this.idPenyewa,
   }) : super(key: key);
 
   @override
@@ -26,12 +27,38 @@ class UploadBuktiScreen extends StatefulWidget {
 class _UploadBuktiScreenState extends State<UploadBuktiScreen> {
   bool _isUploading = false;
   final PembayaranService _pembayaranService = PembayaranService();
+  final NotificationService _notificationService = NotificationService(); // Tambahkan ini
+
+  // Metode untuk mengirim notifikasi ke admin
+  Future<void> _sendNotificationToAdmin(String totalPembayaran) async {
+    try {
+      // Hitung jumlah item makanan
+      int totalItems = 0;
+      for (var item in widget.pesanan) {
+        totalItems += int.parse(item['jumlah'].toString());
+      }
+      
+      await _notificationService.sendNotificationToAdmins(
+        title: 'Pesanan Menu Baru',
+        message: 'Pesanan menu baru dengan $totalItems item menunggu verifikasi',
+        type: 'payment_verification',
+        data: {
+          'timestamp': DateTime.now().toIso8601String(),
+          'amount': totalPembayaran,
+          'is_order_menu': true,
+        },
+      );
+      print('Notifikasi berhasil dikirim ke admin');
+    } catch (e) {
+      print('Gagal mengirim notifikasi ke admin: $e');
+    }
+  }
 
   Future<void> _uploadBukti() async {
     setState(() => _isUploading = true);
     try {
       // Upload bukti pembayaran with "Order Menu" keterangan
-      await _pembayaranService.uploadBuktiPembayaranOrder(
+      final response = await _pembayaranService.uploadBuktiPembayaranOrder(
         metodePembayaranId: widget.idMetode,
         buktiPembayaran: widget.buktiPembayaran,
         jumlahPembayaran: widget.totalPembayaran.toString(),
@@ -39,6 +66,9 @@ class _UploadBuktiScreenState extends State<UploadBuktiScreen> {
         pesanan: widget.pesanan,
         idPenyewa: widget.idPenyewa,
       );
+
+      // Kirim notifikasi ke admin setelah upload berhasil
+      await _sendNotificationToAdmin(widget.totalPembayaran.toString());
 
       // Navigate to success page
       Navigator.pushReplacement(

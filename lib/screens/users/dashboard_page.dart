@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:proyekkos/screens/users/chat_pengelola.dart';
+import 'package:proyekkos/screens/users/notifications/user_notification_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/services/auth_service.dart';
 import '../../widgets/dashboard_skeleton.dart';
 import '../../widgets/custom_bottom_navbarUser.dart';
@@ -12,6 +14,7 @@ import 'pembayaran/histori_pembayaran_screen.dart';
 import 'nomor_penting_screen.dart';
 import 'peraturan_kos_screen.dart';
 import 'package:intl/intl.dart';
+import 'package:proyekkos/data/services/notification_service.dart';
 class DashboardPage extends StatefulWidget {
   @override
   _DashboardPageState createState() => _DashboardPageState();
@@ -20,6 +23,7 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   int _selectedIndex = 0;
   final AuthService _authService = AuthService();
+  final NotificationService _notificationService = NotificationService();
   Map<String, dynamic>? _userProfile;
   bool _isLoading = true;
   List<Widget> _screens = [];
@@ -200,6 +204,26 @@ class _DashboardPageState extends State<DashboardPage> {
                             );
                           },
                         ),
+
+                      // Add this in a user settings or profile page
+ElevatedButton(
+  onPressed: () async {
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getString('user_id');
+    if (userId != null) {
+      final notificationService = NotificationService();
+      await notificationService.testUserNotification(userId);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Test notification sent'))
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('User ID not found'))
+      );
+    }
+  },
+  child: Text('Test Notifications'),
+)
                       ],
                     ),
                   ],
@@ -283,9 +307,53 @@ class _DashboardPageState extends State<DashboardPage> {
             elevation: 0,
             iconTheme: IconThemeData(color: Colors.black),
             actions: [
-              IconButton(
-                icon: Icon(Icons.notifications),
-                onPressed: () {},
+              Stack(
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.notifications),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => UserNotificationScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  StreamBuilder<int>(
+                    stream: _notificationService.unreadCountStream,
+                    builder: (context, snapshot) {
+                      final unreadCount = snapshot.data ?? 0;
+                      if (unreadCount == 0) {
+                        return SizedBox.shrink();
+                      }
+                      return Positioned(
+                        right: 0,
+                        top: 0,
+                        child: Container(
+                          padding: EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          constraints: BoxConstraints(
+                            minWidth: 16,
+                            minHeight: 16,
+                          ),
+                          child: Text(
+                            unreadCount > 9 ? '9+' : '$unreadCount',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
               ),
             ],
           ),
