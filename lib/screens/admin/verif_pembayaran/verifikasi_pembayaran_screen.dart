@@ -262,16 +262,45 @@ class _VerifikasiPembayaranScreenState extends State<VerifikasiPembayaranScreen>
         double jumlahPembayaran = double.parse(pembayaran['jumlah_pembayaran'].toString());
         String originalKeterangan = pembayaran['keterangan'] ?? '';
         
-        await _service.verifikasi(
-          idPembayaran: pembayaran['id_pembayaran'],
-          statusVerifikasi: 'verified',
-          keterangan: originalKeterangan, // Keep original keterangan
-          jumlahPembayaran: jumlahPembayaran,
-        );
+        // Check if this is a rent payment
+        final bool isRentPayment = !originalKeterangan.contains('Order Menu');
+        
+        if (isRentPayment) {
+          // Extract duration from keterangan
+          RegExp durasiRegex = RegExp(r'(\d+) Bulan');
+          final match = durasiRegex.firstMatch(originalKeterangan);
+          int durasiSewa = 1; // Default to 1 month
+          
+          if (match != null && match.groupCount > 0) {
+            durasiSewa = int.tryParse(match.group(1) ?? '1') ?? 1;
+          }
 
-        // Send notification to the specific user about the payment verification
+          // Calculate new checkout date
+          final currentCheckoutDate = DateTime.parse(pembayaran['penyewa']['tanggal_keluar']);
+          final newCheckoutDate = currentCheckoutDate.add(Duration(days: 30 * durasiSewa));
+
+          // Verify payment and update checkout date
+          await _service.verifikasi(
+            idPembayaran: pembayaran['id_pembayaran'],
+            statusVerifikasi: 'verified', 
+            keterangan: originalKeterangan,
+            jumlahPembayaran: jumlahPembayaran,
+            idPenyewa: pembayaran['penyewa']['id_penyewa'],
+            durasi: durasiSewa,
+            tanggalKeluar: newCheckoutDate.toIso8601String(),
+          );
+        } else {
+          await _service.verifikasi(
+            idPembayaran: pembayaran['id_pembayaran'],
+            statusVerifikasi: 'verified',
+            keterangan: originalKeterangan,
+            jumlahPembayaran: jumlahPembayaran,
+          );
+        }
+
+        // Send notification
         await _notificationService.sendNotificationToSpecificUser(
-          userId: pembayaran['penyewa']['user']['id_user'].toString(), // Use the specific user ID
+          userId: pembayaran['penyewa']['user']['id_user'].toString(),
           title: 'Pembayaran Diverifikasi',
           message: 'Pembayaran untuk ${pembayaran['keterangan'] == 'Order Menu' ? 'pesanan makanan' : 'sewa kamar'} Anda telah diverifikasi',
           type: 'payment_verification',

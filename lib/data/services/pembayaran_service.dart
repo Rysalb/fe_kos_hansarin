@@ -55,9 +55,33 @@ class PembayaranService {
     required String statusVerifikasi,
     required String keterangan,
     required double jumlahPembayaran,
+    int? idPenyewa,
+    int? durasi,
+    String? tanggalKeluar,
   }) async {
     try {
       final token = await getToken();
+      if (token == null) throw Exception('Token tidak ditemukan');
+
+      final Map<String, dynamic> body = {
+        'status_verifikasi': statusVerifikasi,
+        'keterangan': keterangan,
+        'jumlah_pembayaran': jumlahPembayaran,
+      };
+
+      // Add penyewa data if provided
+      if (idPenyewa != null) {
+        body['id_penyewa'] = idPenyewa;
+      }
+      
+      // Add durasi & tanggal_keluar for rent payments
+      if (durasi != null) {
+        body['durasi'] = durasi;
+      }
+      if (tanggalKeluar != null) {
+        body['tanggal_keluar'] = tanggalKeluar;
+      }
+
       final response = await http.post(
         Uri.parse('${ApiConstants.baseUrl}/pembayaran/verifikasi/$idPembayaran'),
         headers: {
@@ -65,12 +89,7 @@ class PembayaranService {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
         },
-        
-        body: jsonEncode({
-          'status_verifikasi': statusVerifikasi,
-          'keterangan': keterangan,
-          'jumlah_pembayaran': jumlahPembayaran,
-        }),
+        body: jsonEncode(body),
       );
 
       if (response.statusCode != 200) {
