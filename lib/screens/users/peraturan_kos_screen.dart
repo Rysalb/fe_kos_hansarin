@@ -108,7 +108,7 @@ class _PeraturanKosScreenState extends State<PeraturanKosScreen> {
                       Text(
                         _peraturanKos.isNotEmpty
                             ? DateFormat('dd MMMM yyyy').format(
-                                DateTime.parse(_peraturanKos[0]['created_at']))
+                                DateTime.parse(_peraturanKos[0]['tanggal_dibuat']))
                             : '-',
                         style: TextStyle(fontSize: 14),
                       ),
