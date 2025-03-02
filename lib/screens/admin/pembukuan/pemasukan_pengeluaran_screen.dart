@@ -4,6 +4,7 @@ import 'package:proyekkos/data/services/pemasukan_pengeluaran_service.dart';
 import 'package:proyekkos/screens/admin/pembukuan/tambah_pemasukan_pengeluaran_screen.dart';
 import 'package:proyekkos/screens/admin/pembukuan/edit_pemasukan_pengeluaran_screen.dart';
 import 'package:proyekkos/screens/admin/pembukuan/kwitansi_pembayaran_screen.dart';
+import 'package:proyekkos/widgets/custom_date_range_report.dart';
 
 class PemasukanPengeluaranScreen extends StatefulWidget {
   @override
@@ -185,13 +186,23 @@ class _PemasukanPengeluaranScreenState extends State<PemasukanPengeluaranScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Pembukuan Keuangan'),
+        title: FittedBox(
+          fit: BoxFit.fitWidth,
+          child: Text(
+            'Pembukuan Keuangan',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
         backgroundColor: Color(0xFFE7B789),
         actions: [
           IconButton(
             icon: Icon(Icons.calendar_today),
             onPressed: () => _selectDate(context),
           ),
+          CustomDateRangeReport(), // Add this
         ],
       ),
       body: _isLoading
