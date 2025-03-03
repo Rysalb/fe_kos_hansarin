@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:proyekkos/data/services/pemasukan_pengeluaran_service.dart';
 import 'package:proyekkos/data/services/penyewa_service.dart';
+import 'package:proyekkos/data/services/notification_service.dart';
 
 class TambahPemasukanPengeluaranScreen extends StatefulWidget {
   final bool isPemasukan; // true untuk pemasukan, false untuk pengeluaran
@@ -189,6 +190,21 @@ class _TambahPemasukanPengeluaranScreenState extends State<TambahPemasukanPengel
             durasi: selectedDurasiOption['durasi'],
             tanggalKeluar: newEndDate.toIso8601String(),
           );
+
+          final notificationService = NotificationService();
+        await notificationService.sendNotificationToSpecificUser(
+          userId: _selectedPenyewa!['user']['id_user'].toString(),
+          title: 'Pembayaran Diverifikasi',
+          message: 'Pembayaran sewa kamar ${_selectedPenyewa!['unit_kamar']['nomor_kamar']} untuk ${selectedDurasiOption['label']} telah diverifikasi',
+          type: 'payment_verification',
+          data: {
+            'payment_amount': _selectedHargaSewa,
+            'payment_method': _selectedMetodePembayaran,
+            'payment_duration': selectedDurasiOption['label'],
+            'new_checkout_date': DateFormat('dd MMMM yyyy').format(newEndDate),
+            'room_number': _selectedPenyewa!['unit_kamar']['nomor_kamar'],
+          },
+        );
         } else {
           // Regular transaction without payment record
           await _service.create(
