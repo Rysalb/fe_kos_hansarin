@@ -46,7 +46,7 @@ class MyApp extends StatelessWidget {
       ],
       child: MaterialApp(
         navigatorKey: notificationService.navigatorKey,
-        title: 'Kos App',
+        title: 'Kos SidoRame12',
         theme: ThemeData(primarySwatch: Colors.brown),
         initialRoute: '/',
         routes: {
