@@ -7,6 +7,7 @@ import 'package:proyekkos/data/models/notification_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import 'kamar_service.dart';
+import 'package:proyekkos/screens/users/peraturan_kos_screen.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -322,6 +323,12 @@ Future<void> showNotification({
         case 'checkout_reminder':
           navigatorKey.currentState?.pushNamed('/user/bayar-sewa');
           break;
+        case 'rules_update': // Add this new case
+        // Navigate to peraturan kos screen
+        navigatorKey.currentState?.push(
+          MaterialPageRoute(builder: (context) => PeraturanKosScreen())
+        );
+        break;
         default:
           navigatorKey.currentState?.pushNamed('/user/notifikasi');
       }
@@ -851,6 +858,46 @@ Future<void> checkAndNotifyAdminsAboutExpiringRooms() async {
     
   } catch (e) {
     print('Error checking and notifying about expiring rooms: $e');
+  }
+}
+
+// Add this method to send notifications to all users except admins
+Future<bool> sendNotificationToAllUsers({
+  required String title,
+  required String message,
+  required String type,
+  Map<String, dynamic>? data,
+}) async {
+  try {
+    // Create base data
+    final Map<String, dynamic> requestData = {
+      'app_id': '1f9a735c-e1e6-4ecf-86ef-304bae7c19c2',
+      'headings': {'en': title},
+      'contents': {'en': message},
+      'data': {
+        'type': type,
+        ...?data,
+      },
+      'filters': [
+        {'field': 'tag', 'key': 'role', 'relation': '=', 'value': 'user'},
+      ],
+    };
+    final String restApiKey = "os_v2_app_d6nhgxhb4zhm7bxpgbf247azyklrqxifs3je5446pplbivecyk22tl2svxafm4kb7ra4iqysbbgne3u323gh3zu3izezfzmtebage5q"; 
+    final response = await http.post(
+      Uri.parse('https://onesignal.com/api/v1/notifications'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Basic $restApiKey',
+      },
+      body: json.encode(requestData),
+    );
+
+    final responseData = json.decode(response.body);
+    print('OneSignal response for all users: $responseData');
+    return responseData['id'] != null;
+  } catch (e) {
+    print('Error sending notification to all users: $e');
+    return false;
   }
 }
 }

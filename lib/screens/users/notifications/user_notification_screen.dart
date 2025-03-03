@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
+import 'package:proyekkos/screens/admin/peraturan_kos/peraturan_kos_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async'; // Tambahkan import ini
 import '../../../data/models/notification_model.dart';
@@ -74,6 +75,12 @@ class _UserNotificationScreenState extends State<UserNotificationScreen> {
       case 'checkout_reminder':
         _navigateToBayarSewa();
         break;
+      case 'rules_update': // Add this case
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => PeraturanKosScreen()),
+      );
+      break;
       case 'tenant_verification': // Add this case
         // Navigate to user dashboard or another appropriate screen
         // For example, just show a message or navigate to main screen
@@ -137,8 +144,10 @@ void _navigateToBayarSewa() {
         break;
       case 'Pengingat':
         _filteredNotifications = _notifications
-            .where((notification) => notification.type == 'checkout_reminder')
-            .toList();
+          .where((notification) => 
+              notification.type == 'checkout_reminder' ||
+              notification.type == 'rules_update') // Include rules_update here
+          .toList();
         break;
       case 'Belum Dibaca':
         _filteredNotifications = _notifications
