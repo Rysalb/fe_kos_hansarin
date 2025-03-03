@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:proyekkos/data/services/auth_service.dart';
 import 'package:proyekkos/data/services/pemasukan_pengeluaran_service.dart';
 import 'package:proyekkos/widgets/custom_info_dialog.dart';
-import 'package:proyekkos/data/services/notification_service.dart';
+
 
 class VerifikasiPenyewaScreen extends StatefulWidget {
   @override
@@ -13,7 +13,7 @@ class VerifikasiPenyewaScreen extends StatefulWidget {
 class _VerifikasiPenyewaScreenState extends State<VerifikasiPenyewaScreen> {
   final AuthService _authService = AuthService();
   final PemasukanPengeluaranService _pemasukanService = PemasukanPengeluaranService();
-  final NotificationService _notificationService = NotificationService();
+
   List<Map<String, dynamic>> _pendingUsers = [];
   bool _isLoading = true;
 
@@ -45,12 +45,11 @@ class _VerifikasiPenyewaScreenState extends State<VerifikasiPenyewaScreen> {
     }
   }
 
-  Future<void> _showVerifikasiDialog(Map<String, dynamic> user) async {
+  Future<Map<String, dynamic>?> _showVerifikasiDialog(Map<String, dynamic> user) async {
     DateTime selectedDate = DateTime.now();
     int selectedDurasi = 1; // Default 1 bulan
     double selectedHarga = 0.0;
-    
-    print('User data: $user'); // Debug print
+    int selectedHari = 30; // Default 30 hari
     
     List<Map<String, dynamic>> durasiOptions = [];
     
@@ -96,20 +95,18 @@ class _VerifikasiPenyewaScreenState extends State<VerifikasiPenyewaScreen> {
       }
     }
 
-    print('Durasi options: $durasiOptions'); // Debug print
-
     if (durasiOptions.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Data harga kamar tidak tersedia')),
       );
-      return;
+      return null;
     }
 
     selectedHarga = durasiOptions[0]['harga'] ?? 0.0;
     selectedDurasi = durasiOptions[0]['durasi'] ?? 1;
-    int selectedHari = durasiOptions[0]['hari'] ?? 30;
+    selectedHari = durasiOptions[0]['hari'] ?? 30;
 
-    return showDialog(
+    return await showDialog<Map<String, dynamic>?>(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
@@ -172,46 +169,18 @@ class _VerifikasiPenyewaScreenState extends State<VerifikasiPenyewaScreen> {
           actions: [
             TextButton(
               child: Text('Batal'),
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(context, null), // Return null if cancelled
             ),
             TextButton(
               child: Text('Verifikasi'),
-              onPressed: () async {
-                try {
-                  await _authService.verifikasiUser(
-                    user['id_user'],
-                    'disetujui',
-                    selectedDate,
-                    selectedDurasi,
-                    selectedHarga,
-                  );
-
-                  // Tambahkan null check untuk id_penyewa
-                  final idPenyewa = user['penyewa']?['id_penyewa'];
-                  if (idPenyewa != null) {
-                    await _pemasukanService.create(
-                      jenisTransaksi: 'pemasukan',
-                      kategori: 'Pembayaran Sewa',
-                      tanggal: selectedDate,
-                      jumlah: selectedHarga,
-                      keterangan: 'Pembayaran sewa kamar ${user['penyewa']?['unit_kamar']?['nomor_kamar']} - ${user['name']}',
-                      idPenyewa: idPenyewa, // Gunakan nilai yang sudah di-check
-                    );
-                  }
-
-                  Navigator.pop(context);
-                  await _fetchPendingUsers();
-                  
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Berhasil memverifikasi penyewa'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                } catch (e) {
-                  print('Error verifikasi: $e'); // Tetap tampilkan error untuk debugging
-                  // Tidak perlu menampilkan snackbar error karena verifikasi sebenarnya berhasil
-                }
+              onPressed: () {
+                // Return selected values
+                Navigator.pop(context, {
+                  'selectedDate': selectedDate,
+                  'selectedDurasi': selectedDurasi,
+                  'selectedHarga': selectedHarga,
+                  'selectedHari': selectedHari
+                });
               },
             ),
           ],
@@ -244,25 +213,93 @@ class _VerifikasiPenyewaScreenState extends State<VerifikasiPenyewaScreen> {
   }
 
   Future<void> _handleVerifikasi(Map<String, dynamic> user) async {
-    await _showVerifikasiDialog(user);
+  // Simpan verifikasi dialog ke dalam variabel untuk mendapatkan nilai yang diinput
+  Map<String, dynamic>? dialogResult = await _showVerifikasiDialog(user);
+  
+  // Jika dialog dibatalkan, keluar dari fungsi
+  if (dialogResult == null) return;
+  
+  // Ambil nilai dari dialog
+  final selectedDate = dialogResult['selectedDate'] as DateTime;
+  final selectedDurasi = dialogResult['selectedDurasi'] as int;
+  final selectedHarga = dialogResult['selectedHarga'] as double;
+  final selectedHari = dialogResult['selectedHari'] as int;
+  
+  try {
+    // 1. Verifikasi user terlebih dahulu
+    final response = await _authService.verifikasiUser(
+      user['id_user'],
+      'disetujui',
+      selectedDate,
+      selectedDurasi,
+      selectedHarga,
+    );
     
-    // After verification succeeds, send a notification to the user
-    try {
-      // Send notification to the user that they've been verified
-      await _notificationService.sendNotificationToSpecificUser(
-        userId: user['id_user'].toString(), // Use the specific user ID
-        title: 'Akun Diverifikasi',
-        message: 'Selamat! Akun Anda telah diverifikasi untuk kamar ${user['penyewa']['unit_kamar']['nomor_kamar']}',
-        type: 'tenant_verification',
-        data: {
-          'id_user': user['id_user'],
-          'id_penyewa': user['penyewa']['id_penyewa'],
-        },
+    // 2. Tambahkan transaksi pembayaran sewa ke database
+    final idPenyewa = user['penyewa']?['id_penyewa'];
+    final nomorKamar = user['penyewa']?['unit_kamar']?['nomor_kamar'] ?? 'Tidak diketahui';
+    final namaPenyewa = user['name'] ?? 'Tidak diketahui';
+    
+    if (idPenyewa != null) {
+      // Format keterangan sama persis seperti di tambah_penyewa.dart
+      final keterangan = 'Pembayaran sewa kamar ${nomorKamar} - ${namaPenyewa} (${selectedDurasi} bulan)';
+      
+      // Buat transaksi pemasukan dengan parameter yang sama persis
+      await _pemasukanService.create(
+        jenisTransaksi: 'pemasukan',
+        kategori: 'Pembayaran Sewa',
+        tanggal: selectedDate,
+        jumlah: selectedHarga,
+        keterangan: keterangan,
+        idPenyewa: idPenyewa,
+        metodePembayaran: 'Dibayar',
+        idUser: user['id_user'],
       );
-    } catch (e) {
-      print('Error sending verification notification: $e');
     }
+    
+    await _fetchPendingUsers();
+    
+    // Tampilkan dialog konfirmasi berhasil
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Verifikasi Berhasil'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.check_circle, color: Colors.green, size: 50),
+              SizedBox(height: 16),
+              Text('Penyewa berhasil diverifikasi'),
+              Text('Pembayaran sewa telah dicatat dalam pembukuan'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              child: Text('OK'),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ],
+        );
+      },
+    );
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Berhasil memverifikasi penyewa'),
+        backgroundColor: Colors.green,
+      ),
+    );
+  } catch (e) {
+    print('Error verifikasi: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Terjadi kesalahan: ${e.toString()}'),
+        backgroundColor: Colors.red,
+      ),
+    );
   }
+}
 
   Future<void> _handleTolak(Map<String, dynamic> user) async {
     try {

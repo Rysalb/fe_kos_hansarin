@@ -231,6 +231,7 @@ class AuthService {
 
       return json.decode(response.body);
     } catch (e) {
+       print('Verification error: $e'); // Debug log
       throw Exception('Error: $e');
     }
   }
