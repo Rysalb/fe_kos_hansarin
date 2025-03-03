@@ -89,6 +89,7 @@ class NotificationService {
   }
 
 // Update the _handleForegroundNotification method in notification_service.dart
+// Update the _handleForegroundNotification method
 void _handleForegroundNotification(OSNotificationWillDisplayEvent event) async {
   try {
     // Get notification data
@@ -103,24 +104,33 @@ void _handleForegroundNotification(OSNotificationWillDisplayEvent event) async {
     // Save notification locally
     if (data != null) {
       final userRole = await _getCurrentUserRole();
-      final userId = await _getCurrentUserId();
       
-      // Extract target information from data
-      final targetRole = data['targetRole']?.toString();
-      final targetUserId = data['targetUserId']?.toString();
+      // Extract target information from data - check both camelCase and snake_case versions
+      // since different parts of your code might use different conventions
+      String? targetRole = data['targetRole']?.toString() ?? 
+                         data['target_role']?.toString();
+                         
+      String? targetUserId = data['targetUserId']?.toString() ?? 
+                           data['target_user_id']?.toString();
       
-      print('Processing notification for role: $userRole (current ID: $userId)');
-      print('Target role: $targetRole, Target user ID: $targetUserId');
+      // For admin notifications related to verification, explicitly set targetRole if missing
+      String? type = data['type']?.toString();
+      if (targetRole == null && 
+          (type == 'payment_verification' || type == 'tenant_verification')) {
+        targetRole = 'admin';
+      }
       
-      // Create and save notification regardless of targeting
-      // (filtering will happen when retrieving)
+      print('Processing notification with role: $userRole');
+      print('Notification type: $type, targetRole: $targetRole, targetUserId: $targetUserId');
+      
+      // Create the notification model
       final notificationModel = NotificationModel(
-        id: notification.notificationId,
+        id: DateTime.now().millisecondsSinceEpoch,  // Use integer timestamp
         title: notification.title ?? '',
         message: notification.body ?? '',
-        type: data['type']?.toString() ?? '',
+        type: type ?? '',
         createdAt: DateTime.now(),
-        data: data as Map<String, dynamic>?,
+        data: data,
         targetRole: targetRole,
         targetUserId: targetUserId,
       );
@@ -165,7 +175,7 @@ Future<bool> sendNotificationToAdmins({
     // Prepare data with proper targeting
     final Map<String, dynamic> notificationData = {
       'type': type,
-      'targetRole': 'admin',
+      'targetRole': 'admin',  // Make sure this is set
       ...?data,
     };
     
@@ -178,11 +188,12 @@ Future<bool> sendNotificationToAdmins({
         type: type,
         createdAt: DateTime.now(),
         data: notificationData,
-        targetRole: 'admin',
+        targetRole: 'admin',  // Make sure this is set
       );
       
       await _saveNotificationLocally(localNotification);
       _updateUnreadCount();
+      print('Saved admin notification locally');
     }
     
     // Rest of the method remains the same...
@@ -450,28 +461,28 @@ Future<void> _saveNotificationLocally(NotificationModel notification) async {
   }
 }
 
-  // Save notifications to SharedPreferences
-  Future<void> _saveNotificationsLocally(List<NotificationModel> notifications) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final jsonList = notifications.map((n) => jsonEncode({
-        'id': n.id,
-        'title': n.title,
-        'message': n.message,
-        'type': n.type,
-        'created_at': n.createdAt.toIso8601String(),
-        'is_read': n.isRead,
-        'data': jsonEncode(n.data ?? {}),
-        'target_role': n.targetRole,
-        'target_user_id': n.targetUserId,
-      })).toList();
-      
-      await prefs.setStringList(_notificationsKey, jsonList);
-    } catch (e) {
-      print('Error saving notifications locally: $e');
-    }
+ // Update the _saveNotificationsLocally method
+Future<void> _saveNotificationsLocally(List<NotificationModel> notifications) async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonList = notifications.map((n) => jsonEncode({
+      'id': n.id,
+      'title': n.title,
+      'message': n.message,
+      'type': n.type,
+      'created_at': n.createdAt.toIso8601String(),
+      'is_read': n.isRead,
+      'data': n.data != null ? jsonEncode(n.data) : null,
+      'target_role': n.targetRole,
+      'target_user_id': n.targetUserId,
+    })).toList();
+    
+    await prefs.setStringList(_notificationsKey, jsonList);
+    print('Saved ${jsonList.length} notifications to local storage');
+  } catch (e) {
+    print('Error saving notifications locally: $e');
   }
-
+}
 // Replace the getLocalNotifications() method in notification_service.dart
 Future<List<NotificationModel>> getLocalNotifications() async {
   try {
@@ -500,26 +511,35 @@ Future<List<NotificationModel>> getLocalNotifications() async {
           targetUserId: json['target_user_id'],
         );
         
-        // Improved filtering logic - include notifications with null targetRole
+        // FIX: Improved filtering logic - different for admin vs user
         bool shouldInclude = false;
         
         if (userRole == 'admin') {
-          // Admin sees notifications targeted to admins or with null targetRole
-          shouldInclude = notification.targetRole == 'admin' || notification.targetRole == null;
-        } else if (userRole == 'user') {
-          // User sees notifications targeted to users in general,
-          // OR specifically targeted to this user,
-          // OR with null targetRole
-          shouldInclude = notification.targetRole == 'user' || 
-                         notification.targetRole == null ||
-                         (notification.targetUserId != null && notification.targetUserId == userId);
+          // ADMIN FILTERING:
+          // 1. Include notifications explicitly targeted to admin role
+          // 2. Include notifications with type 'payment_verification' or 'tenant_verification'
+          // 3. Include notifications with null targetRole (legacy notifications)
+          shouldInclude = 
+              notification.targetRole == 'admin' || 
+              notification.targetRole == null ||
+              notification.type == 'payment_verification' ||
+              notification.type == 'tenant_verification';
+        } else {
+          // USER FILTERING:
+          // 1. Include notifications targeted to any user
+          // 2. Include notifications specifically targeted to this user ID
+          // 3. Include notifications with null targetRole (legacy notifications)
+          shouldInclude = 
+              notification.targetRole == 'user' || 
+              notification.targetRole == null ||
+              notification.targetUserId == userId;
         }
         
         if (shouldInclude) {
           result.add(notification);
           print('Including notification: ${notification.title} (${notification.type})');
         } else {
-          print('Filtering out notification: ${notification.title}, targetRole: ${notification.targetRole}, targetUserId: ${notification.targetUserId}');
+          print('Filtering out notification: ${notification.title}, targetRole: ${notification.targetRole}, targetUserId: ${notification.targetUserId}, type: ${notification.type}');
         }
       } catch (e) {
         print('Error parsing notification JSON: $e');
