@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
+import 'package:proyekkos/screens/users/notifications/user_notification_screen.dart';
+import 'package:proyekkos/screens/users/order_menu/order_history_screen.dart';
+import 'package:proyekkos/screens/users/pembayaran/bayar_sewa_screen.dart';
+import 'package:proyekkos/screens/users/pembayaran/histori_pembayaran_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:proyekkos/data/services/notification_service.dart';
 import 'blocs/auth/auth_bloc.dart';
@@ -52,6 +56,10 @@ class MyApp extends StatelessWidget {
           '/admin/verifikasi-pembayaran': (context) => VerifikasiPembayaranScreen(),
           '/admin/verifikasi-penyewa': (context) => VerifikasiPenyewaScreen(),
           '/admin/notifikasi': (context) => NotifikasiScreen(),
+          '/user/histori-pembayaran': (context) => HistoriPembayaranScreen(),
+          '/user/order-history': (context) => OrderHistoryScreen(),
+          '/user/bayar-sewa': (context) => BayarSewaScreen(),
+          '/user/notifikasi': (context) => UserNotificationScreen(),
         },
         debugShowCheckedModeBanner: false,
       ),

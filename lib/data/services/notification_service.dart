@@ -36,9 +36,8 @@ class NotificationService {
       final permissionResult = await OneSignal.Notifications.requestPermission(true);
       print('OneSignal permission request result: $permissionResult');
       
-      // Set notification handlers (new API style)
+      // Hanya gunakan foreground notification handler
       OneSignal.Notifications.addForegroundWillDisplayListener(_handleForegroundNotification);
-      OneSignal.Notifications.addClickListener(_handleNotificationClicked);
       
       // Get OneSignal player ID and log it
       final onesignalId = await OneSignal.User.getOnesignalId();
@@ -71,7 +70,7 @@ class NotificationService {
       
       // Update unread count on startup
       _updateUnreadCount();
-      
+      await setupNotificationHandling();
     } catch (e) {
       print('Error initializing OneSignal: $e');
     }
@@ -146,7 +145,7 @@ class NotificationService {
     try {
       print('📱 Sending notification to admins: $title - $message');
       
-      // First save locally ONLY if the current user is an admin
+      // Save locally ONLY if the current user is an admin
       final userRole = await _getCurrentUserRole();
       if (userRole == 'admin') {
         final localNotification = NotificationModel(
@@ -155,11 +154,10 @@ class NotificationService {
           type: type,
           createdAt: DateTime.now(),
           data: data,
-          targetRole: 'admin', // Specify this is for admins only
+          targetRole: 'admin', // Explicitly mark as admin notification
         );
         
         await _saveNotificationLocally(localNotification);
-        print('📱 Notification saved locally for admin');
         _updateUnreadCount();
       }
       
@@ -184,6 +182,7 @@ class NotificationService {
         "contents": {"en": message},
         "data": {
           "type": type,
+          "targetRole": "admin", // Add this to OneSignal data
           ...?data,
         }
       };
@@ -239,21 +238,43 @@ class NotificationService {
   }
 
   // Navigation logic
-  void _navigateBasedOnType(String? type, dynamic id) {
+  void _navigateBasedOnType(String? type, dynamic id) async {
     if (navigatorKey.currentState == null) return;
     
-    switch(type) {
-      case 'payment_verification':
-        navigatorKey.currentState?.pushNamed('/admin/verifikasi-pembayaran');
-        break;
-      case 'tenant_verification':
-        navigatorKey.currentState?.pushNamed('/admin/verifikasi-penyewa');
-        break;
-      case 'checkout_reminder':
-        navigatorKey.currentState?.pushNamed('/pembayaran/bayar-sewa');
-        break;
-      default:
-        navigatorKey.currentState?.pushNamed('/admin/notifikasi');
+    // Get user role to determine appropriate navigation
+    final userRole = await _getCurrentUserRole();
+    
+    print('Navigating based on notification type: $type for role: $userRole');
+    
+    // Role-specific navigation
+    if (userRole == 'admin') {
+      // Admin navigation paths
+      switch(type) {
+        case 'payment_verification':
+          navigatorKey.currentState?.pushNamed('/admin/verifikasi-pembayaran');
+          break;
+        case 'tenant_verification':
+          navigatorKey.currentState?.pushNamed('/admin/verifikasi-penyewa');
+          break;
+        default:
+          navigatorKey.currentState?.pushNamed('/admin/notifikasi');
+      }
+    } else {
+      // User navigation paths
+      switch(type) {
+        case 'payment_verification':
+        case 'payment_rejected':
+          navigatorKey.currentState?.pushNamed('/user/histori-pembayaran');
+          break;
+        case 'order_verification':
+          navigatorKey.currentState?.pushNamed('/user/order-history');
+          break;
+        case 'checkout_reminder':
+          navigatorKey.currentState?.pushNamed('/user/bayar-sewa');
+          break;
+        default:
+          navigatorKey.currentState?.pushNamed('/user/notifikasi');
+      }
     }
   }
 
@@ -414,7 +435,8 @@ class NotificationService {
         'created_at': n.createdAt.toIso8601String(),
         'is_read': n.isRead,
         'data': jsonEncode(n.data ?? {}),
-        'target_role': n.targetRole, // Add this
+        'target_role': n.targetRole,
+        'target_user_id': n.targetUserId,
       })).toList();
       
       await prefs.setStringList(_notificationsKey, jsonList);
@@ -429,6 +451,7 @@ class NotificationService {
       final prefs = await SharedPreferences.getInstance();
       final jsonList = prefs.getStringList(_notificationsKey) ?? [];
       final userRole = await _getCurrentUserRole();
+      final userId = await _getCurrentUserId(); 
       
       return jsonList.map((jsonStr) {
         try {
@@ -438,29 +461,27 @@ class NotificationService {
             title: json['title'] ?? '',
             message: json['message'] ?? '',
             type: json['type'] ?? '',
-            createdAt: json['created_at'] != null 
-                ? DateTime.parse(json['created_at']) 
-                : DateTime.now(),
+            createdAt: DateTime.parse(json['created_at']),
             isRead: json['is_read'] ?? false,
-            data: json['data'] != null 
-                ? jsonDecode(json['data']) 
-                : null,
+            data: json['data'] != null ? jsonDecode(json['data']) : null,
             targetRole: json['target_role'],
+            targetUserId: json['target_user_id'],
           );
           
-          // Skip notifications meant specifically for the other role
-          if (notification.targetRole != null && 
-              notification.targetRole != userRole && 
-              userRole != null) {
-            return null;
+          // Filter based on role and user ID
+          if (userRole == 'admin') {
+            // Admin should only see admin notifications
+            return notification.targetRole == 'admin' ? notification : null;
+          } else {
+            // Regular users should only see their specific notifications
+            return (notification.targetRole == 'user' && 
+                   notification.targetUserId == userId) ? notification : null;
           }
-          
-          return notification;
         } catch (e) {
           print('Error parsing notification JSON: $e');
           return null;
         }
-      }).whereType<NotificationModel>().toList(); // Filter out null values
+      }).whereType<NotificationModel>().toList();
     } catch (e) {
       print('Error getting local notifications: $e');
       return [];
@@ -506,19 +527,24 @@ class NotificationService {
     try {
       print('📱 Sending notification to user $userId: $title - $message');
       
-      // Save locally for viewing in notifications list
-      final localNotification = NotificationModel(
-        title: title,
-        message: message,
-        type: type,
-        createdAt: DateTime.now(),
-        data: data,
-      );
+      // Save locally only if this is for the current user
+      final currentUserId = await _getCurrentUserId();
+      if (currentUserId == userId) {
+        final localNotification = NotificationModel(
+          title: title,
+          message: message,
+          type: type,
+          createdAt: DateTime.now(),
+          data: data,
+          targetRole: 'user',
+          targetUserId: userId, // Add user ID to identify specific user target
+        );
+        
+        await _saveNotificationLocally(localNotification);
+        _updateUnreadCount();
+      }
       
-      await _saveNotificationLocally(localNotification);
-      _updateUnreadCount();
-      
-      // Send via OneSignal REST API
+      // The rest of the method remains the same...
       final Uri apiUrl = Uri.parse('https://onesignal.com/api/v1/notifications');
       
       // Your REST API key
@@ -539,6 +565,8 @@ class NotificationService {
         "contents": {"en": message},
         "data": {
           "type": type,
+          "targetRole": "user",
+          "targetUserId": userId, // Add to OneSignal data
           ...?data,
         }
       };
@@ -589,4 +617,42 @@ class NotificationService {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('user_role');
   }
+
+  Future<String?> _getCurrentUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('user_id');
+  }
+
+  // Add this method to NotificationService.dart
+Future<void> deleteReadNotifications() async {
+  try {
+    final notifications = await getLocalNotifications();
+    final unreadNotifications = notifications.where((n) => !n.isRead).toList();
+    await _saveNotificationsLocally(unreadNotifications);
+    _updateUnreadCount();
+  } catch (e) {
+    print('Error deleting read notifications: $e');
+  }
+}
+
+// Also add this method to register the routes with proper handlers
+Future<void> setupNotificationHandling() async {
+  // Setup click handler to process notifications that launch the app
+  OneSignal.Notifications.addClickListener((event) async {
+    try {
+      final data = event.notification.additionalData;
+      print('📱 Notification clicked with data: ${data.toString()}');
+      
+      if (data != null) {
+        final type = data['type']?.toString();
+        final id = data['id'];
+        
+        // Navigate based on notification type and user role
+        _navigateBasedOnType(type, id);
+      }
+    } catch (e) {
+      print('Error handling notification click: $e');
+    }
+  });
+}
 }

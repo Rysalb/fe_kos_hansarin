@@ -15,7 +15,12 @@ class UserNotificationScreen extends StatefulWidget {
 class _UserNotificationScreenState extends State<UserNotificationScreen> {
   final NotificationService _notificationService = NotificationService();
   List<NotificationModel> _notifications = [];
+  List<NotificationModel> _filteredNotifications = [];
   bool _isLoading = true;
+  String _currentFilter = 'Semua'; // Default filter
+  
+  // Add filter options
+  final List<String> _filterOptions = ['Semua', 'Pembayaran', 'Pesanan', 'Pengingat', 'Belum Dibaca'];
 
   @override
   void initState() {
@@ -106,12 +111,14 @@ class _UserNotificationScreenState extends State<UserNotificationScreen> {
     ).then((_) => _loadNotifications());
   }
   
+  // Modify this method to apply filtering
   Future<void> _loadNotifications() async {
     try {
       final notifications = await _notificationService.getNotifications();
       if (mounted) {
         setState(() {
           _notifications = notifications;
+          _applyFilter(); // Apply filter when loading
           _isLoading = false;
         });
       }
@@ -121,6 +128,67 @@ class _UserNotificationScreenState extends State<UserNotificationScreen> {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  // Add this new method to apply filters
+  void _applyFilter() {
+    switch (_currentFilter) {
+      case 'Pembayaran':
+        _filteredNotifications = _notifications
+            .where((notification) => 
+                notification.type == 'payment_verification' || 
+                notification.type == 'payment_rejected')
+            .toList();
+        break;
+      case 'Pesanan':
+        _filteredNotifications = _notifications
+            .where((notification) => notification.type == 'order_verification')
+            .toList();
+        break;
+      case 'Pengingat':
+        _filteredNotifications = _notifications
+            .where((notification) => notification.type == 'checkout_reminder')
+            .toList();
+        break;
+      case 'Belum Dibaca':
+        _filteredNotifications = _notifications
+            .where((notification) => !notification.isRead)
+            .toList();
+        break;
+      case 'Semua':
+      default:
+        _filteredNotifications = List.from(_notifications);
+        break;
+    }
+  }
+
+  // Add this method for deleting read notifications
+  Future<void> _deleteReadNotifications() async {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Konfirmasi'),
+        content: Text('Hapus semua notifikasi yang sudah dibaca?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              await _notificationService.deleteReadNotifications();
+              await _loadNotifications();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Notifikasi yang sudah dibaca telah dihapus')),
+              );
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: Text('Hapus'),
+          ),
+        ],
+      ),
+    );
   }
 
   Color _getNotificationColor(String type) {
@@ -237,12 +305,46 @@ class _UserNotificationScreenState extends State<UserNotificationScreen> {
         ),
         backgroundColor: Color(0xFFE7B789),
         elevation: 0,
+        actions: [
+          // Add filter icon
+          PopupMenuButton<String>(
+            icon: Icon(Icons.filter_list, color: Colors.black),
+            tooltip: 'Filter notifikasi',
+            onSelected: (value) {
+              setState(() {
+                _currentFilter = value;
+                _applyFilter();
+              });
+            },
+            itemBuilder: (context) => _filterOptions.map((option) {
+              return PopupMenuItem<String>(
+                value: option,
+                child: Row(
+                  children: [
+                    Icon(
+                      _currentFilter == option ? Icons.check : null,
+                      color: Color(0xFF4A2F1C),
+                    ),
+                    SizedBox(width: 8),
+                    Text(option),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+          // Add delete icon
+          IconButton(
+            icon: Icon(Icons.delete_sweep, color: Colors.black),
+            tooltip: 'Hapus notifikasi yang sudah dibaca',
+            onPressed: _deleteReadNotifications,
+          ),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: _loadNotifications,
         child: _isLoading
             ? Center(child: CircularProgressIndicator())
-            : _notifications.isEmpty
+            : _filteredNotifications.isEmpty // Use filtered notifications here
                 ? Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -253,13 +355,21 @@ class _UserNotificationScreenState extends State<UserNotificationScreen> {
                           'Tidak ada notifikasi',
                           style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                         ),
+                        if (_currentFilter != 'Semua')
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Text(
+                              'Filter aktif: $_currentFilter',
+                              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                            ),
+                          ),
                       ],
                     ),
                   )
                 : ListView.builder(
-                    itemCount: _notifications.length,
+                    itemCount: _filteredNotifications.length, // Use filtered notifications here
                     itemBuilder: (context, index) {
-                      final notification = _notifications[index];
+                      final notification = _filteredNotifications[index]; // Use filtered notifications
                       return Dismissible(
                         key: Key(notification.id?.toString() ?? index.toString()),
                         background: Container(color: Colors.grey[200]),
