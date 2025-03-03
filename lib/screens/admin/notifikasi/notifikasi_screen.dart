@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
+import 'dart:async'; // Tambahkan import ini
 import '../../../data/models/notification_model.dart';
 import '../../../data/services/notification_service.dart';
 import '../verif_pembayaran/verifikasi_pembayaran_screen.dart';
@@ -17,6 +18,7 @@ class _NotifikasiScreenState extends State<NotifikasiScreen> {
   List<NotificationModel> _filteredNotifications = [];
   bool _isLoading = true;
   String _currentFilter = 'Semua'; // Default filter
+  Timer? _refreshTimer; // Deklarasikan timer
   
   // Add filter options
   final List<String> _filterOptions = ['Semua', 'Pembayaran', 'Penyewa', 'Belum Dibaca'];
@@ -28,6 +30,13 @@ class _NotifikasiScreenState extends State<NotifikasiScreen> {
     _setupNotificationListeners();
     // Pastikan role tag admin sudah terpasang
     _setAdminRoleTag();
+    
+    // Tambahkan timer untuk refresh otomatis setiap 3 detik
+    _refreshTimer = Timer.periodic(Duration(seconds: 3), (timer) {
+      if (mounted) {
+        _loadNotifications();
+      }
+    });
   }
   
   void _setupNotificationListeners() {
@@ -41,17 +50,8 @@ class _NotifikasiScreenState extends State<NotifikasiScreen> {
           _handleNavigationByType(type);
         }
       });
-
-      // OneSignal foreground notification listener
-      OneSignal.Notifications.addForegroundWillDisplayListener((event) {
-        print('ADMIN NOTIFICATION WILL DISPLAY: ${event.notification.jsonRepresentation()}');
-        
-        // Let it display
-        event.notification.display();
-        
-        // Reload notifications from storage
-        _loadNotifications();
-      });
+      
+      // Remove the foreground listener from here as it's handled in NotificationService
     } catch (e) {
       print('Error setting up notification listeners: $e');
     }
@@ -88,19 +88,17 @@ class _NotifikasiScreenState extends State<NotifikasiScreen> {
     }
   }
 
-  void _navigateToPaymentVerification() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => VerifikasiPembayaranScreen()),
-    ).then((_) => _loadNotifications());
-  }
+// Di NotifikasiScreen.dart
+void _navigateToPaymentVerification() {
+  Navigator.pushNamed(context, '/admin/verifikasi-pembayaran')
+    .then((_) => _loadNotifications());
+}
 
-  void _navigateToTenantVerification() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => VerifikasiPenyewaScreen()),
-    ).then((_) => _loadNotifications());
-  }
+void _navigateToTenantVerification() {
+  Navigator.pushNamed(context, '/admin/verifikasi-penyewa')
+    .then((_) => _loadNotifications());
+}
+
 
   Future<void> _loadNotifications() async {
     try {
@@ -206,7 +204,8 @@ class _NotifikasiScreenState extends State<NotifikasiScreen> {
 
   @override
   void dispose() {
-    // Make sure to dispose any resources
+    // Pastikan timer dibatalkan saat widget di-dispose
+    _refreshTimer?.cancel();
     super.dispose();
   }
 

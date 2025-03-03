@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
+import 'dart:async'; // Tambahkan import ini
 import '../../../data/models/notification_model.dart';
 import '../../../data/services/notification_service.dart';
 import '../pembayaran/bayar_sewa_screen.dart';
@@ -18,6 +19,7 @@ class _UserNotificationScreenState extends State<UserNotificationScreen> {
   List<NotificationModel> _filteredNotifications = [];
   bool _isLoading = true;
   String _currentFilter = 'Semua'; // Default filter
+  Timer? _refreshTimer; // Deklarasikan timer
   
   // Add filter options
   final List<String> _filterOptions = ['Semua', 'Pembayaran', 'Pesanan', 'Pengingat', 'Belum Dibaca'];
@@ -27,6 +29,13 @@ class _UserNotificationScreenState extends State<UserNotificationScreen> {
     super.initState();
     _loadNotifications();
     _setupNotificationListeners();
+    
+    // Tambahkan timer untuk refresh otomatis setiap 3 detik
+    _refreshTimer = Timer.periodic(Duration(seconds: 3), (timer) {
+      if (mounted) {
+        _loadNotifications();
+      }
+    });
   }
 
   void _setupNotificationListeners() {
@@ -40,17 +49,8 @@ class _UserNotificationScreenState extends State<UserNotificationScreen> {
           _handleNavigationByType(type, data);
         }
       });
-
-      // OneSignal foreground notification listener
-      OneSignal.Notifications.addForegroundWillDisplayListener((event) {
-        print('USER NOTIFICATION WILL DISPLAY LISTENER CALLED');
-        // Prevent default display to handle it manually
-        event.preventDefault();
-        // Display notification after handling
-        event.notification.display();
-        // Refresh notification list
-        _loadNotifications();
-      });
+      
+      // Remove the foreground listener from here as it's handled in NotificationService
     } catch (e) {
       print('Error setting up notification listeners: $e');
     }
@@ -82,34 +82,21 @@ class _UserNotificationScreenState extends State<UserNotificationScreen> {
         print('Unknown notification type: $type');
     }
   }
+// Di UserNotificationScreen.dart
+void _navigateToPaymentHistory() {
+  Navigator.pushNamed(context, '/user/histori-pembayaran')
+    .then((_) => _loadNotifications());
+}
 
-  void _navigateToPaymentHistory() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => HistoriPembayaranScreen()),
-    ).then((_) => _loadNotifications());
-  }
+void _navigateToOrderHistory() {
+  Navigator.pushNamed(context, '/user/order-history')
+    .then((_) => _loadNotifications());
+}
 
-  void _navigateToOrderHistory() {
-    try {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => OrderHistoryScreen()),
-      ).then((_) => _loadNotifications());
-    } catch (e) {
-      print("Error navigating to order history: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Tidak dapat membuka riwayat pesanan'))
-      );
-    }
-  }
-
-  void _navigateToBayarSewa() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => BayarSewaScreen()),
-    ).then((_) => _loadNotifications());
-  }
+void _navigateToBayarSewa() {
+  Navigator.pushNamed(context, '/user/bayar-sewa')
+    .then((_) => _loadNotifications());
+}
   
   // Modify this method to apply filtering
   Future<void> _loadNotifications() async {
@@ -287,7 +274,8 @@ class _UserNotificationScreenState extends State<UserNotificationScreen> {
 
   @override
   void dispose() {
-    // Clean up resources if needed
+    // Pastikan timer dibatalkan saat widget di-dispose
+    _refreshTimer?.cancel();
     super.dispose();
   }
   

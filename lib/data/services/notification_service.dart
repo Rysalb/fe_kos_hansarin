@@ -95,23 +95,46 @@ class NotificationService {
       final notification = event.notification;
       final data = notification.additionalData;
       
-      print('📱 Received notification: ${notification.jsonRepresentation()}');
+      print('📱 Received foreground notification: ${notification.jsonRepresentation()}');
       
-      // Allow the notification to display (new API style)
+      // Allow the notification to display
       notification.display();
       
-      // Save notification locally
+      // Save notification locally based on role and target
       if (data != null) {
-        final notificationModel = NotificationModel(
-          title: notification.title ?? '',
-          message: notification.body ?? '',
-          type: data['type']?.toString() ?? '',
-          createdAt: DateTime.now(),
-          data: data,
-        );
+        final userRole = await _getCurrentUserRole();
+        final userId = await _getCurrentUserId();
+        final targetRole = data['targetRole']?.toString();
+        final targetUserId = data['targetUserId']?.toString();
         
-        await _saveNotificationLocally(notificationModel);
-        _updateUnreadCount();
+        // Only save if this notification is for the current user's role or specific ID
+        bool shouldSaveLocally = false;
+        
+        if (userRole == 'admin' && targetRole == 'admin') {
+          shouldSaveLocally = true;
+        } else if (userRole == 'user' && targetRole == 'user' && 
+                  targetUserId != null && targetUserId == userId) {
+          shouldSaveLocally = true;
+        }
+        
+        if (shouldSaveLocally) {
+          final notificationModel = NotificationModel(
+            title: notification.title ?? '',
+            message: notification.body ?? '',
+            type: data['type']?.toString() ?? '',
+            createdAt: DateTime.now(),
+            data: data,
+            targetRole: targetRole,
+            targetUserId: targetUserId,
+          );
+          
+          await _saveNotificationLocally(notificationModel);
+          _updateUnreadCount();
+          
+          print('📱 Notification saved locally for $userRole (ID: $userId)');
+        } else {
+          print('📱 Notification not saved locally - target mismatch');
+        }
       }
     } catch (e) {
       print('Error handling foreground notification: $e');
@@ -654,5 +677,8 @@ Future<void> setupNotificationHandling() async {
       print('Error handling notification click: $e');
     }
   });
+
+  // Register for foreground notifications at the global level
+  OneSignal.Notifications.addForegroundWillDisplayListener(_handleForegroundNotification);
 }
 }
