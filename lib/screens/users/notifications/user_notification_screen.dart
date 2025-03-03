@@ -57,6 +57,51 @@ class _UserNotificationScreenState extends State<UserNotificationScreen> {
     }
   }
 
+  // Add this method to both _NotifikasiScreenState and _UserNotificationScreenState classes
+void _debugNotifications() {
+  showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: Text('Debug Notifications'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Total notifications: ${_notifications.length}', 
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              Text('Filtered notifications: ${_filteredNotifications.length}', 
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              Divider(),
+              ..._notifications.map((n) => Padding(
+                padding: const EdgeInsets.only(bottom: 8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('${n.title}', style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text('Type: ${n.type}'),
+                    Text('Target: ${n.targetRole ?? "None"}'),
+                    Text('User ID: ${n.targetUserId ?? "None"}'),
+                    Text('Read: ${n.isRead}'),
+                    Divider(),
+                  ],
+                ),
+              )),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Close'),
+          ),
+        ],
+      );
+    },
+  );
+}
+
   void _handleNavigationByType(String? type, Map<String, dynamic>? data) {
     switch (type) {
       case 'payment_verification': 
@@ -337,6 +382,12 @@ void _navigateToBayarSewa() {
     );
     _loadNotifications();
   },
+),
+// Add this to the actions list in the AppBar in both notification screens
+IconButton(
+  icon: Icon(Icons.bug_report, color: Colors.black),
+  onPressed: _debugNotifications,
+  tooltip: 'Debug notifications',
 ),
         ],
       ),

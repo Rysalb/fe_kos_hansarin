@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 class NotificationModel {
-  final int? id;
+  final dynamic id;  // Change from int? to dynamic
   final String title;
   final String message;
   final String type;

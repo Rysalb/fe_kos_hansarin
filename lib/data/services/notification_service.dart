@@ -88,58 +88,52 @@ class NotificationService {
     }
   }
 
-  // Handler for foreground notifications (new API style)
-  void _handleForegroundNotification(OSNotificationWillDisplayEvent event) async {
-    try {
-      // Get notification data
-      final notification = event.notification;
-      final data = notification.additionalData;
+// Update the _handleForegroundNotification method in notification_service.dart
+void _handleForegroundNotification(OSNotificationWillDisplayEvent event) async {
+  try {
+    // Get notification data
+    final notification = event.notification;
+    final data = notification.additionalData;
+    
+    print('Received foreground notification: ${notification.jsonRepresentation()}');
+    
+    // Allow the notification to display
+    notification.display();
+    
+    // Save notification locally
+    if (data != null) {
+      final userRole = await _getCurrentUserRole();
+      final userId = await _getCurrentUserId();
       
-      print('📱 Received foreground notification: ${notification.jsonRepresentation()}');
+      // Extract target information from data
+      final targetRole = data['targetRole']?.toString();
+      final targetUserId = data['targetUserId']?.toString();
       
-      // Allow the notification to display
-      notification.display();
+      print('Processing notification for role: $userRole (current ID: $userId)');
+      print('Target role: $targetRole, Target user ID: $targetUserId');
       
-      // Save notification locally based on role and target
-      if (data != null) {
-        final userRole = await _getCurrentUserRole();
-        final userId = await _getCurrentUserId();
-        final targetRole = data['targetRole']?.toString();
-        final targetUserId = data['targetUserId']?.toString();
-        
-        // Only save if this notification is for the current user's role or specific ID
-        bool shouldSaveLocally = false;
-        
-        if (userRole == 'admin' && targetRole == 'admin') {
-          shouldSaveLocally = true;
-        } else if (userRole == 'user' && targetRole == 'user' && 
-                  targetUserId != null && targetUserId == userId) {
-          shouldSaveLocally = true;
-        }
-        
-        if (shouldSaveLocally) {
-          final notificationModel = NotificationModel(
-            title: notification.title ?? '',
-            message: notification.body ?? '',
-            type: data['type']?.toString() ?? '',
-            createdAt: DateTime.now(),
-            data: data,
-            targetRole: targetRole,
-            targetUserId: targetUserId,
-          );
-          
-          await _saveNotificationLocally(notificationModel);
-          _updateUnreadCount();
-          
-          print('📱 Notification saved locally for $userRole (ID: $userId)');
-        } else {
-          print('📱 Notification not saved locally - target mismatch');
-        }
-      }
-    } catch (e) {
-      print('Error handling foreground notification: $e');
+      // Create and save notification regardless of targeting
+      // (filtering will happen when retrieving)
+      final notificationModel = NotificationModel(
+        id: notification.notificationId,
+        title: notification.title ?? '',
+        message: notification.body ?? '',
+        type: data['type']?.toString() ?? '',
+        createdAt: DateTime.now(),
+        data: data as Map<String, dynamic>?,
+        targetRole: targetRole,
+        targetUserId: targetUserId,
+      );
+      
+      await _saveNotificationLocally(notificationModel);
+      _updateUnreadCount();
+      
+      print('Notification saved locally');
     }
+  } catch (e) {
+    print('Error handling foreground notification: $e');
   }
+}
 
   // Handler for notification clicks (new API style)
   void _handleNotificationClicked(OSNotificationClickEvent event) {
@@ -158,108 +152,111 @@ class NotificationService {
     }
   }
 
-  // Send notification to all admin users using REST API
-  Future<bool> sendNotificationToAdmins({
-    required String title,
-    required String message,
-    required String type,
-    Map<String, dynamic>? data,
-  }) async {
-    try {
-      print('📱 Sending notification to admins: $title - $message');
-      
-      // Save locally ONLY if the current user is an admin
-      final userRole = await _getCurrentUserRole();
-      if (userRole == 'admin') {
-        final localNotification = NotificationModel(
-          title: title,
-          message: message,
-          type: type,
-          createdAt: DateTime.now(),
-          data: data,
-          targetRole: 'admin', // Explicitly mark as admin notification
-        );
-        
-        await _saveNotificationLocally(localNotification);
-        _updateUnreadCount();
-      }
-      
-      // Send via OneSignal REST API
-      final Uri apiUrl = Uri.parse('https://onesignal.com/api/v1/notifications');
-      
-      // Replace with your REST API key from OneSignal dashboard
-      final String restApiKey = "os_v2_app_d6nhgxhb4zhm7bxpgbf247azyklrqxifs3je5446pplbivecyk22tl2svxafm4kb7ra4iqysbbgne3u323gh3zu3izezfzmtebage5q"; 
-      
-      final Map<String, String> headers = {
-        'Authorization': 'Basic $restApiKey',
-        'Content-Type': 'application/json',
-      };
-      
-      // Create request body - specifically target admin role users
-      final Map<String, dynamic> requestBody = {
-        "app_id": "1f9a735c-e1e6-4ecf-86ef-304bae7c19c2", // Your OneSignal App ID
-        "filters": [
-          {"field": "tag", "key": "role", "relation": "=", "value": "admin"}
-        ],
-        "headings": {"en": title},
-        "contents": {"en": message},
-        "data": {
-          "type": type,
-          "targetRole": "admin", // Add this to OneSignal data
-          ...?data,
-        }
-      };
-      
-      final response = await http.post(
-        apiUrl,
-        headers: headers,
-        body: jsonEncode(requestBody),
-      );
-      
-      print('📱 OneSignal API Response: ${response.statusCode} - ${response.body}');
-      
-      if (response.statusCode == 200) {
-        return true;
-      } else {
-        print('OneSignal error: ${response.body}');
-        return false;
-      }
-    } catch (e) {
-      print('Error sending notification to admins: $e');
-      return false;
-    }
-  }
-
-  // For normal notifications we can use the local approach
-  Future<void> showNotification({
-    required String type,
-    required String title,
-    required String message,
-    Map<String, dynamic>? data,
-  }) async {
-    try {
-      // Create notification model
-      final notification = NotificationModel(
+  // Update the sendNotificationToAdmins method
+Future<bool> sendNotificationToAdmins({
+  required String title,
+  required String message,
+  required String type,
+  Map<String, dynamic>? data,
+}) async {
+  try {
+    print('Sending notification to admins: $title - $message');
+    
+    // Prepare data with proper targeting
+    final Map<String, dynamic> notificationData = {
+      'type': type,
+      'targetRole': 'admin',
+      ...?data,
+    };
+    
+    // Save locally ONLY if the current user is an admin
+    final userRole = await _getCurrentUserRole();
+    if (userRole == 'admin') {
+      final localNotification = NotificationModel(
         title: title,
         message: message,
         type: type,
         createdAt: DateTime.now(),
-        data: data,
+        data: notificationData,
+        targetRole: 'admin',
       );
       
-      // Save locally
-      await _saveNotificationLocally(notification);
-      
-      // Instead of trying to create a local notification through OneSignal (which can be complex),
-      // we'll just save it locally and update the badge count.
-      // For actual push notifications, we'll use sendNotificationToSpecificUser or sendNotificationToAdmins
+      await _saveNotificationLocally(localNotification);
       _updateUnreadCount();
-      
-    } catch (e) {
-      print('Error showing notification: $e');
     }
+    
+    // Rest of the method remains the same...
+    final Uri apiUrl = Uri.parse('https://onesignal.com/api/v1/notifications');
+    final String restApiKey = "os_v2_app_d6nhgxhb4zhm7bxpgbf247azyklrqxifs3je5446pplbivecyk22tl2svxafm4kb7ra4iqysbbgne3u323gh3zu3izezfzmtebage5q"; 
+    
+    final Map<String, String> headers = {
+      'Authorization': 'Basic $restApiKey',
+      'Content-Type': 'application/json',
+    };
+    
+    final Map<String, dynamic> requestBody = {
+      "app_id": "1f9a735c-e1e6-4ecf-86ef-304bae7c19c2",
+      "filters": [
+        {"field": "tag", "key": "role", "relation": "=", "value": "admin"}
+      ],
+      "headings": {"en": title},
+      "contents": {"en": message},
+      "data": notificationData
+    };
+    
+    final response = await http.post(
+      apiUrl,
+      headers: headers,
+      body: jsonEncode(requestBody),
+    );
+    
+    print('OneSignal API Response: ${response.statusCode} - ${response.body}');
+    
+    if (response.statusCode == 200) {
+      return true;
+    } else {
+      print('OneSignal error: ${response.body}');
+      return false;
+    }
+  } catch (e) {
+    print('Error sending notification to admins: $e');
+    return false;
   }
+}
 
+// Update the showNotification method
+Future<void> showNotification({
+  required String type,
+  required String title,
+  required String message,
+  Map<String, dynamic>? data,
+  String? targetRole,
+  String? targetUserId,
+}) async {
+  try {
+    // If no targetRole is provided, use current user's role
+    final userRole = targetRole ?? await _getCurrentUserRole();
+    
+    // Create notification model
+    final notification = NotificationModel(
+      title: title,
+      message: message,
+      type: type,
+      createdAt: DateTime.now(),
+      data: data,
+      targetRole: userRole,
+      targetUserId: targetUserId,
+    );
+    
+    // Save locally
+    await _saveNotificationLocally(notification);
+    _updateUnreadCount();
+    
+    print('Local notification created: $title (type: $type, target: $userRole, userId: $targetUserId)');
+  } catch (e) {
+    print('Error showing notification: $e');
+  }
+}
   // Navigation logic
   void _navigateBasedOnType(String? type, dynamic id) async {
     if (navigatorKey.currentState == null) return;
@@ -420,31 +417,38 @@ class NotificationService {
     );
   }
   
-  // Local storage methods
-  Future<void> _saveNotificationLocally(NotificationModel notification) async {
-    try {
-      final notifications = await getLocalNotifications();
-      
-      // Create a copy with a generated ID if none exists
-      final notificationWithId = notification.id == null 
-          ? NotificationModel(
-              id: DateTime.now().millisecondsSinceEpoch,
-              title: notification.title,
-              message: notification.message,
-              type: notification.type,
-              createdAt: notification.createdAt,
-              isRead: notification.isRead,
-              data: notification.data,
-            )
-          : notification;
-          
-      notifications.insert(0, notificationWithId);
-      
-      await _saveNotificationsLocally(notifications);
-    } catch (e) {
-      print('Error saving notification locally: $e');
-    }
+// Update _saveNotificationLocally method in notification_service.dart
+Future<void> _saveNotificationLocally(NotificationModel notification) async {
+  try {
+    final notifications = await getLocalNotifications();
+    
+    // Create a copy with a generated ID if none exists
+    final updatedNotification = notification.id == null
+        ? NotificationModel(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            title: notification.title,
+            message: notification.message,
+            type: notification.type,
+            createdAt: notification.createdAt,
+            isRead: notification.isRead,
+            data: notification.data,
+            targetRole: notification.targetRole,
+            targetUserId: notification.targetUserId,
+          )
+        : notification;
+    
+    // Add to the beginning of the list
+    notifications.insert(0, updatedNotification);
+    
+    // Save back to shared preferences
+    await _saveNotificationsLocally(notifications);
+    
+    print('Notification saved locally: ${notification.title}, targetRole: ${notification.targetRole}, targetUserId: ${notification.targetUserId}');
+    
+  } catch (e) {
+    print('Error saving notification locally: $e');
   }
+}
 
   // Save notifications to SharedPreferences
   Future<void> _saveNotificationsLocally(List<NotificationModel> notifications) async {
@@ -468,16 +472,16 @@ class NotificationService {
     }
   }
 
-  // Get notifications from SharedPreferences
-  Future<List<NotificationModel>> getLocalNotifications() async {
+// Replace the getLocalNotifications() method in notification_service.dart
+Future<List<NotificationModel>> getLocalNotifications() async {
   try {
     final prefs = await SharedPreferences.getInstance();
     final jsonList = prefs.getStringList(_notificationsKey) ?? [];
     final userRole = await _getCurrentUserRole();
     final userId = await _getCurrentUserId();
     
-    print('DEBUG: User role: $userRole, User ID: $userId');
-    print('DEBUG: Found ${jsonList.length} raw notifications in storage');
+    print('Getting notifications for role: $userRole (ID: $userId)');
+    print('Found ${jsonList.length} raw notifications in storage');
     
     final result = <NotificationModel>[];
     
@@ -496,39 +500,42 @@ class NotificationService {
           targetUserId: json['target_user_id'],
         );
         
+        // Improved filtering logic - include notifications with null targetRole
         bool shouldInclude = false;
         
-      // Sederhanakan kode filter - gunakan pendekatan lebih langsung
-if (userRole == 'user') {
-  // User melihat semua notifikasi yang bertipe 'user' tanpa filter kompleks
-  shouldInclude = notification.targetRole == 'user'; 
-  if (shouldInclude) {
-    print('Notifikasi untuk user diterima: ${notification.title}');
-  }
-} else if (userRole == 'admin') {
-  // Admin hanya melihat notifikasi admin
-  shouldInclude = notification.targetRole == 'admin';
-}
+        if (userRole == 'admin') {
+          // Admin sees notifications targeted to admins or with null targetRole
+          shouldInclude = notification.targetRole == 'admin' || notification.targetRole == null;
+        } else if (userRole == 'user') {
+          // User sees notifications targeted to users in general,
+          // OR specifically targeted to this user,
+          // OR with null targetRole
+          shouldInclude = notification.targetRole == 'user' || 
+                         notification.targetRole == null ||
+                         (notification.targetUserId != null && notification.targetUserId == userId);
+        }
         
         if (shouldInclude) {
           result.add(notification);
-          print('DEBUG: Including notification: ${notification.title}');
+          print('Including notification: ${notification.title} (${notification.type})');
         } else {
-          print('DEBUG: Filtering out notification: ${notification.title}, targetRole: ${notification.targetRole}, targetUserId: ${notification.targetUserId}');
+          print('Filtering out notification: ${notification.title}, targetRole: ${notification.targetRole}, targetUserId: ${notification.targetUserId}');
         }
       } catch (e) {
         print('Error parsing notification JSON: $e');
       }
     }
     
-    print('DEBUG: Returning ${result.length} notifications after filtering');
+    // Sort notifications by createdAt date (newest first)
+    result.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    
+    print('Returning ${result.length} notifications after filtering');
     return result;
   } catch (e) {
     print('Error getting local notifications: $e');
     return [];
   }
 }
-
   // Testing function
   Future<void> testNotification() async {
     try {
@@ -558,76 +565,77 @@ if (userRole == 'user') {
     _unreadCountController.close();
   }
 
-  Future<bool> sendNotificationToSpecificUser({
-    required String userId,
-    required String title,
-    required String message,
-    required String type,
-    Map<String, dynamic>? data,
-  }) async {
-    try {
-      print('📱 Sending notification to user $userId: $title - $message');
-      
-      // Save locally only if this is for the current user
-      final currentUserId = await _getCurrentUserId();
-      if (currentUserId == userId) {
-        final localNotification = NotificationModel(
-          title: title,
-          message: message,
-          type: type,
-          createdAt: DateTime.now(),
-          data: data,
-          targetRole: 'user',
-          targetUserId: userId, // Add user ID to identify specific user target
-        );
-        
-        await _saveNotificationLocally(localNotification);
-        _updateUnreadCount();
-      }
-      
-      // The rest of the method remains the same...
-      final Uri apiUrl = Uri.parse('https://onesignal.com/api/v1/notifications');
-      
-      // Your REST API key
-      final String restApiKey = "os_v2_app_d6nhgxhb4zhm7bxpgbf247azyklrqxifs3je5446pplbivecyk22tl2svxafm4kb7ra4iqysbbgne3u323gh3zu3izezfzmtebage5q"; 
-      
-      final Map<String, String> headers = {
-        'Authorization': 'Basic $restApiKey',
-        'Content-Type': 'application/json',
-      };
-      
-      // IMPORTANT: Use filter to target by user_id tag, not external ID
-      final Map<String, dynamic> requestBody = {
-        "app_id": "1f9a735c-e1e6-4ecf-86ef-304bae7c19c2",
-        "filters": [
-          {"field": "tag", "key": "user_id", "relation": "=", "value": userId}
-        ],
-        "headings": {"en": title},
-        "contents": {"en": message},
-        "data": {
-          "type": type,
-          "targetRole": "user",
-          "targetUserId": userId, // Add to OneSignal data
-          ...?data,
-        }
-      };
-      
-     print('📱 Sending OneSignal notification to user $userId with body: ${jsonEncode(requestBody)}');
-      
-      final response = await http.post(
-        apiUrl,
-        headers: headers,
-        body: jsonEncode(requestBody),
+  // Update sendNotificationToSpecificUser method
+Future<bool> sendNotificationToSpecificUser({
+  required String userId,
+  required String title,
+  required String message,
+  required String type,
+  Map<String, dynamic>? data,
+}) async {
+  try {
+    print('Sending notification to user $userId: $title - $message');
+    
+    // Prepare data with proper targeting
+    final Map<String, dynamic> notificationData = {
+      'type': type,
+      'targetRole': 'user',
+      'targetUserId': userId,
+      ...?data,
+    };
+    
+    // Save locally only if this is for the current user
+    final currentUserId = await _getCurrentUserId();
+    if (currentUserId == userId) {
+      final localNotification = NotificationModel(
+        title: title,
+        message: message,
+        type: type,
+        createdAt: DateTime.now(),
+        data: notificationData,
+        targetRole: 'user',
+        targetUserId: userId,
       );
       
-      print('📱 OneSignal API Response (to user $userId): ${response.statusCode} - ${response.body}');
-      
-      return response.statusCode == 200;
-    } catch (e) {
-      print('Error sending notification to user $userId: $e');
-      return false;
+      await _saveNotificationLocally(localNotification);
+      _updateUnreadCount();
     }
+    
+    // Rest of the method remains the same...
+    final Uri apiUrl = Uri.parse('https://onesignal.com/api/v1/notifications');
+    final String restApiKey = "os_v2_app_d6nhgxhb4zhm7bxpgbf247azyklrqxifs3je5446pplbivecyk22tl2svxafm4kb7ra4iqysbbgne3u323gh3zu3izezfzmtebage5q"; 
+    
+    final Map<String, String> headers = {
+      'Authorization': 'Basic $restApiKey',
+      'Content-Type': 'application/json',
+    };
+    
+    final Map<String, dynamic> requestBody = {
+      "app_id": "1f9a735c-e1e6-4ecf-86ef-304bae7c19c2",
+      "filters": [
+        {"field": "tag", "key": "user_id", "relation": "=", "value": userId}
+      ],
+      "headings": {"en": title},
+      "contents": {"en": message},
+      "data": notificationData
+    };
+    
+    print('Sending OneSignal notification to user $userId with body: ${jsonEncode(requestBody)}');
+    
+    final response = await http.post(
+      apiUrl,
+      headers: headers,
+      body: jsonEncode(requestBody),
+    );
+    
+    print('OneSignal API Response (to user $userId): ${response.statusCode} - ${response.body}');
+    
+    return response.statusCode == 200;
+  } catch (e) {
+    print('Error sending notification to user $userId: $e');
+    return false;
   }
+}
 
   Future<void> testUserNotification(String userId) async {
     try {
@@ -699,4 +707,6 @@ Future<void> setupNotificationHandling() async {
   // Register for foreground notifications at the global level
   OneSignal.Notifications.addForegroundWillDisplayListener(_handleForegroundNotification);
 }
+
+
 }
