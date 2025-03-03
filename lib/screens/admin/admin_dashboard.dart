@@ -40,7 +40,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with WidgetsBin
     WidgetsBinding.instance.addObserver(this);
     _initializeScreens();
     _loadData();
-    
+    _checkExpiringRooms();
     // Add this to set role tag when admin dashboard loads
     _setAdminRoleTag();
   }
@@ -71,6 +71,11 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with WidgetsBin
       AccountScreen(),
     ];
   }
+
+  void _checkExpiringRooms() {
+  // Check for expiring rooms and notify admins if needed
+  _notificationService.checkAndNotifyAdminsAboutExpiringRooms();
+}
 
   Future<void> _loadData() async {
     if (!mounted) return;

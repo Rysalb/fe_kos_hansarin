@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
+import 'package:proyekkos/screens/admin/admin_dashboard.dart';
 import 'dart:async'; // Tambahkan import ini
 import '../../../data/models/notification_model.dart';
 import '../../../data/services/notification_service.dart';
@@ -21,7 +22,7 @@ class _NotifikasiScreenState extends State<NotifikasiScreen> {
   Timer? _refreshTimer; // Deklarasikan timer
   
   // Add filter options
-  final List<String> _filterOptions = ['Semua', 'Pembayaran', 'Penyewa', 'Belum Dibaca'];
+  final List<String> _filterOptions = ['Semua', 'Pembayaran', 'Penyewa', 'Belum Dibaca', 'Peringatan'];
   
   @override
   void initState() {
@@ -130,6 +131,13 @@ void _navigateToTenantVerification() {
             .where((notification) => notification.type == 'payment_verification')
             .toList();
         break;
+      case 'Peringatan':
+  _filteredNotifications = _notifications
+      .where((notification) => 
+          notification.type == 'room_expiry_alert' || 
+          notification.type == 'checkout_reminder')
+      .toList();
+  break;
       case 'Penyewa':
         _filteredNotifications = _notifications
             .where((notification) => notification.type == 'tenant_verification')
@@ -185,17 +193,24 @@ void _navigateToTenantVerification() {
       // Navigate based on notification type
       switch (notification.type) {
         case 'payment_verification':
-          Navigator.push(
+          Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => VerifikasiPembayaranScreen()),
           ).then((_) => _loadNotifications());
           break;
         case 'tenant_verification':
-          Navigator.push(
+          Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => VerifikasiPenyewaScreen()),
           ).then((_) => _loadNotifications());
           break;
+        case 'room_expiry_alert':
+  // Navigate to dashboard page which shows expiring rooms
+          Navigator.pushReplacement(
+    context,
+    MaterialPageRoute(builder: (context) => AdminDashboardPage()),
+  );
+  break;
         default:
           print('Unknown notification type: ${notification.type}');
       }
@@ -356,6 +371,10 @@ void _navigateToTenantVerification() {
           backgroundColor: Colors.green[100],
           child: Icon(Icons.person, color: Colors.green),
         );
+         case 'room_expiry_alert':
+      return CircleAvatar(
+        backgroundColor: Colors.red[100],
+        child: Icon(Icons.timer, color: Colors.red));
       default:
         return CircleAvatar(
           backgroundColor: Colors.grey[200],

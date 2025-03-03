@@ -6,6 +6,7 @@ import 'package:proyekkos/core/constants/api_constants.dart';
 import 'package:proyekkos/data/models/notification_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
+import 'kamar_service.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -66,11 +67,21 @@ class NotificationService {
       });
 
       Future.delayed(Duration(seconds: 5), () {
-  checkAndSendCheckoutReminders();
-});
-      
+        checkAndSendCheckoutReminders();
+      });
       // Also run it once at startup
       checkAndSendCheckoutReminders();
+
+      // In the initialize() method of NotificationService, add this:
+// Schedule daily check for expiring rooms
+      Timer.periodic(Duration(hours: 12), (timer) {
+       checkAndNotifyAdminsAboutExpiringRooms();
+        });
+
+// Also run it once at startup with a delay to ensure backend services are ready
+Future.delayed(Duration(seconds: 10), () {
+  checkAndNotifyAdminsAboutExpiringRooms();
+});
       
       // Update unread count on startup
       _updateUnreadCount();
@@ -290,6 +301,10 @@ Future<void> showNotification({
           break;
         case 'tenant_verification':
           navigatorKey.currentState?.pushNamed('/admin/verifikasi-penyewa');
+          break;
+          case 'room_expiry_alert':
+  // Navigate to admin dashboard to show expiring rooms
+          navigatorKey.currentState?.pushNamed('/admin/dashboard');
           break;
         default:
           navigatorKey.currentState?.pushNamed('/admin/notifikasi');
@@ -787,5 +802,55 @@ Future<void> setupNotificationHandling() async {
   OneSignal.Notifications.addForegroundWillDisplayListener(_handleForegroundNotification);
 }
 
-
+// Add this method to NotificationService
+Future<void> checkAndNotifyAdminsAboutExpiringRooms() async {
+  try {
+    final KamarService _kamarService = KamarService();
+    
+    print('Checking for rooms with expiring leases for admin notification...');
+    
+    // Get list of rooms with expiring leases (within 7 days)
+    List<Map<String, dynamic>> expiringRooms = await _kamarService.getExpiringRooms();
+    
+    if (expiringRooms.isEmpty) {
+      print('No rooms with expiring leases found');
+      return;
+    }
+    
+    print('Found ${expiringRooms.length} rooms with expiring leases');
+    
+    // Format the message with room information
+    String notificationMessage;
+    
+    if (expiringRooms.length == 1) {
+      final room = expiringRooms.first;
+      final tanggalKeluar = DateTime.parse(room['tanggal_keluar']);
+      final daysLeft = tanggalKeluar.difference(DateTime.now()).inDays;
+      
+      notificationMessage = 'Kamar ${room['nomor_kamar']} akan berakhir masa sewanya dalam $daysLeft hari.';
+    } else {
+      notificationMessage = 'Ada ${expiringRooms.length} kamar yang akan berakhir masa sewanya dalam 7 hari ke depan.';
+    }
+    
+    // Send notification to all admins
+    await sendNotificationToAdmins(
+      title: 'Peringatan Masa Sewa Kamar',
+      message: notificationMessage,
+      type: 'room_expiry_alert',
+      data: {
+        'expiring_rooms': expiringRooms.map((room) => {
+          'nomor_kamar': room['nomor_kamar'],
+          'tanggal_keluar': room['tanggal_keluar'],
+          'nama_penyewa': room['nama_penyewa'] ?? 'Tidak diketahui',
+        }).toList(),
+        'count': expiringRooms.length,
+      },
+    );
+    
+    print('Admin notification about expiring rooms sent successfully');
+    
+  } catch (e) {
+    print('Error checking and notifying about expiring rooms: $e');
+  }
+}
 }
