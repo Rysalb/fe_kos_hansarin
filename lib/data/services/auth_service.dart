@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/auth_response.dart';
 import '../../core/constants/api_constants.dart';
@@ -41,6 +42,19 @@ class AuthService {
         print('Token: ${data['token']}');
         print('Role: ${data['user']['role']}');
         print('Penyewa ID: ${data['penyewa']?['id_penyewa']}');
+        
+        // Save user ID
+        final userId = data['user']['id_user'].toString();
+        await prefs.setString('user_id', userId);
+            
+        // Set OneSignal tags for user
+        try {
+          await OneSignal.User.addTagWithKey('user_id', userId);
+          await OneSignal.User.addTagWithKey('role', 'user');
+          print('OneSignal tags set for user: $userId');
+        } catch (e) {
+          print('Error setting OneSignal tags: $e');
+        }
       }
       return data;
     } catch (e) {

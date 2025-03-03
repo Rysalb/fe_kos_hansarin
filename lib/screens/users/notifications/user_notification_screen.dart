@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async'; // Tambahkan import ini
 import '../../../data/models/notification_model.dart';
 import '../../../data/services/notification_service.dart';
@@ -326,6 +327,17 @@ void _navigateToBayarSewa() {
             tooltip: 'Hapus notifikasi yang sudah dibaca',
             onPressed: _deleteReadNotifications,
           ),
+          IconButton(
+  icon: Icon(Icons.refresh, color: Colors.black),
+  onPressed: () async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('local_notifications');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Penyimpanan notifikasi direset')),
+    );
+    _loadNotifications();
+  },
+),
         ],
       ),
       body: RefreshIndicator(
@@ -431,6 +443,7 @@ void _navigateToBayarSewa() {
                     },
                   ),
       ),
+      
     );
   }
 

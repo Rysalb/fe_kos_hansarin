@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:proyekkos/screens/users/chat_pengelola.dart';
 import 'package:proyekkos/screens/users/notifications/user_notification_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -33,6 +34,7 @@ class _DashboardPageState extends State<DashboardPage> {
     super.initState();
     _initializeScreens();
     _loadData();
+    _setupUserInOneSignal();
   }
 
   void _initializeScreens() {
@@ -392,4 +394,30 @@ class _DashboardPageState extends State<DashboardPage> {
       ),
     );
   }
+
+  void _setupUserInOneSignal() async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getString('user_id');
+    
+    // Hapus tag lama yang mungkin masih ada
+    await OneSignal.User.removeTag('role');
+    await OneSignal.User.removeTag('user_id');
+    
+    if (userId != null) {
+      // Set tag baru
+      await OneSignal.User.addTagWithKey('user_id', userId);
+      await OneSignal.User.addTagWithKey('role', 'user');
+      
+      // Print untuk verifikasi
+      final tags = await OneSignal.User.getTags();
+      print('====== USER TAGS ======');
+      print('user_id: $userId');
+      print('All tags: $tags');
+      print('======================');
+    }
+  } catch (e) {
+    print('Error setting OneSignal tags: $e');
+  }
+}
 }

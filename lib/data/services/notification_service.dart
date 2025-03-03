@@ -470,46 +470,64 @@ class NotificationService {
 
   // Get notifications from SharedPreferences
   Future<List<NotificationModel>> getLocalNotifications() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final jsonList = prefs.getStringList(_notificationsKey) ?? [];
-      final userRole = await _getCurrentUserRole();
-      final userId = await _getCurrentUserId(); 
-      
-      return jsonList.map((jsonStr) {
-        try {
-          final Map<String, dynamic> json = jsonDecode(jsonStr);
-          final notification = NotificationModel(
-            id: json['id'],
-            title: json['title'] ?? '',
-            message: json['message'] ?? '',
-            type: json['type'] ?? '',
-            createdAt: DateTime.parse(json['created_at']),
-            isRead: json['is_read'] ?? false,
-            data: json['data'] != null ? jsonDecode(json['data']) : null,
-            targetRole: json['target_role'],
-            targetUserId: json['target_user_id'],
-          );
-          
-          // Filter based on role and user ID
-          if (userRole == 'admin') {
-            // Admin should only see admin notifications
-            return notification.targetRole == 'admin' ? notification : null;
-          } else {
-            // Regular users should only see their specific notifications
-            return (notification.targetRole == 'user' && 
-                   notification.targetUserId == userId) ? notification : null;
-          }
-        } catch (e) {
-          print('Error parsing notification JSON: $e');
-          return null;
-        }
-      }).whereType<NotificationModel>().toList();
-    } catch (e) {
-      print('Error getting local notifications: $e');
-      return [];
-    }
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonList = prefs.getStringList(_notificationsKey) ?? [];
+    final userRole = await _getCurrentUserRole();
+    final userId = await _getCurrentUserId();
+    
+    print('DEBUG: User role: $userRole, User ID: $userId');
+    print('DEBUG: Found ${jsonList.length} raw notifications in storage');
+    
+    final result = <NotificationModel>[];
+    
+    for (var jsonStr in jsonList) {
+      try {
+        final Map<String, dynamic> json = jsonDecode(jsonStr);
+        final notification = NotificationModel(
+          id: json['id'],
+          title: json['title'] ?? '',
+          message: json['message'] ?? '',
+          type: json['type'] ?? '',
+          createdAt: DateTime.parse(json['created_at']),
+          isRead: json['is_read'] ?? false,
+          data: json['data'] != null ? jsonDecode(json['data']) : null,
+          targetRole: json['target_role'],
+          targetUserId: json['target_user_id'],
+        );
+        
+        bool shouldInclude = false;
+        
+      // Sederhanakan kode filter - gunakan pendekatan lebih langsung
+if (userRole == 'user') {
+  // User melihat semua notifikasi yang bertipe 'user' tanpa filter kompleks
+  shouldInclude = notification.targetRole == 'user'; 
+  if (shouldInclude) {
+    print('Notifikasi untuk user diterima: ${notification.title}');
   }
+} else if (userRole == 'admin') {
+  // Admin hanya melihat notifikasi admin
+  shouldInclude = notification.targetRole == 'admin';
+}
+        
+        if (shouldInclude) {
+          result.add(notification);
+          print('DEBUG: Including notification: ${notification.title}');
+        } else {
+          print('DEBUG: Filtering out notification: ${notification.title}, targetRole: ${notification.targetRole}, targetUserId: ${notification.targetUserId}');
+        }
+      } catch (e) {
+        print('Error parsing notification JSON: $e');
+      }
+    }
+    
+    print('DEBUG: Returning ${result.length} notifications after filtering');
+    return result;
+  } catch (e) {
+    print('Error getting local notifications: $e');
+    return [];
+  }
+}
 
   // Testing function
   Future<void> testNotification() async {
@@ -594,7 +612,7 @@ class NotificationService {
         }
       };
       
-      print('📱 Sending OneSignal notification with body: ${jsonEncode(requestBody)}');
+     print('📱 Sending OneSignal notification to user $userId with body: ${jsonEncode(requestBody)}');
       
       final response = await http.post(
         apiUrl,
