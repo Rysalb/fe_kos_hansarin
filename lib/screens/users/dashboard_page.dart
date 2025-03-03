@@ -231,6 +231,10 @@ class _DashboardPageState extends State<DashboardPage> {
         _isLoading = false;
         _initializeScreens();
       });
+
+      // Check for expired dates after profile is loaded
+      await _checkForExpiredDates();
+      
     } catch (e) {
       print('Error in _loadData: $e');
       if (mounted) {
@@ -418,6 +422,26 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   } catch (e) {
     print('Error setting OneSignal tags: $e');
+  }
+}
+
+  Future<void> _checkForExpiredDates() async {
+  try {
+    if (_userProfile != null && _userProfile!['tanggal_keluar'] != null) {
+      final checkoutDate = DateTime.parse(_userProfile!['tanggal_keluar']);
+      final now = DateTime.now();
+      final difference = checkoutDate.difference(now).inDays;
+      
+      print('Dashboard checkout check - Days remaining: $difference');
+      
+      // If checkout date is approaching (within 7 days)
+      if (difference <= 7 && difference >= 0) {
+        // Manually trigger the checkout reminder
+        await _notificationService.checkAndSendCheckoutReminders();
+      }
+    }
+  } catch (e) {
+    print('Error checking expired dates: $e');
   }
 }
 }

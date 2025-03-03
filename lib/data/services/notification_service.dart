@@ -61,9 +61,13 @@ class NotificationService {
       });
 
       // Schedule daily checkout date check at app startup
-      Timer.periodic(Duration(hours: 24), (timer) {
+      Timer.periodic(Duration(hours: 6), (timer) {
         checkAndSendCheckoutReminders();
       });
+
+      Future.delayed(Duration(seconds: 5), () {
+  checkAndSendCheckoutReminders();
+});
       
       // Also run it once at startup
       checkAndSendCheckoutReminders();
@@ -378,55 +382,110 @@ Future<void> showNotification({
     }
   }
 
-  Future<void> checkAndSendCheckoutReminders() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('auth_token');
-      if (token == null) return;
+ // Update this method in NotificationService class
+Future<void> checkAndSendCheckoutReminders() async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    final userId = prefs.getString('user_id');
+    
+    if (token == null || userId == null) {
+      print('Skipping checkout reminder check - no auth token or user ID');
+      return;
+    }
+    
+    print('Checking checkout date reminders for user ID: $userId');
+    
+    final response = await http.get(
+      Uri.parse('${ApiConstants.baseUrl}/user/profile'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      },
+    );
+    
+    print('Profile response status: ${response.statusCode}');
+    
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      print('Profile data: ${data['data']}');
       
-      final response = await http.get(
-        Uri.parse('${ApiConstants.baseUrl}/user/profile'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Accept': 'application/json',
-        },
-      );
-      
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['status'] == true && data['data'] != null && data['data']['tanggal_keluar'] != null) {
+      // Validate we're checking the right user's profile
+      if (data['data'] != null && 
+          data['data']['id_user'] != null && 
+          data['data']['id_user'].toString() == userId) {
+        
+        if (data['status'] == true && data['data']['tanggal_keluar'] != null) {
           final checkoutDate = DateTime.parse(data['data']['tanggal_keluar']);
           final now = DateTime.now();
           final difference = checkoutDate.difference(now).inDays;
           
-          // Send reminder notifications for 3, 2, 1, 0 days left
-          if (difference <= 3 && difference >= 0) {
-            await _createCheckoutReminderNotification(difference);
+          print('Checkout date: $checkoutDate');
+          print('Current date: $now');
+          print('Days remaining: $difference');
+          
+          // Send reminder notifications for 7, 3, 2, 1, 0 days left
+          if (difference <= 7 && difference >= 0) {
+            await _createCheckoutReminderNotification(difference, userId);
+            print('Checkout reminder notification created for user $userId with $difference days remaining');
           }
+        } else {
+          print('No checkout date found in profile data for user $userId');
         }
+      } else {
+        print('Profile mismatch - expected user $userId');
       }
-    } catch (e) {
-      print('Error checking checkout date: $e');
-    }
-  }
-
-  Future<void> _createCheckoutReminderNotification(int daysLeft) async {
-    String title = 'Masa Sewa Akan Berakhir';
-    String message;
-    
-    if (daysLeft == 0) {
-      message = 'Masa sewa kamar Anda berakhir hari ini. Silakan perpanjang untuk melanjutkan.';
     } else {
-      message = 'Masa sewa kamar Anda akan berakhir dalam $daysLeft hari lagi. Silakan segera perpanjang.';
+      print('Failed to fetch profile data: ${response.body}');
     }
-    
+  } catch (e) {
+    print('Error checking checkout date: $e');
+  }
+}
+
+Future<void> _createCheckoutReminderNotification(int daysLeft,  dynamic userId) async {
+  String title = 'Masa Sewa Akan Berakhir';
+  String message;
+  
+  if (daysLeft == 0) {
+    message = 'Masa sewa kamar Anda berakhir HARI INI. Silakan perpanjang untuk melanjutkan.';
+  } else if (daysLeft == 1) {
+    message = 'Masa sewa kamar Anda akan berakhir BESOK. Silakan segera perpanjang.';
+  } else {
+    message = 'Masa sewa kamar Anda akan berakhir dalam $daysLeft hari lagi. Silakan segera perpanjang.';
+  }
+  
+  // Create a notification that will show up in the system tray
+  final notificationData = {
+    'days_left': daysLeft,
+    'type': 'checkout_reminder',
+    'targetRole': 'user',
+    'targetUserId': userId,
+  };
+  // Get current user ID to compare
+  final currentUserId = await _getCurrentUserId();
+  
+  // Only create local notification if this is for the current user
+  if (currentUserId == userId) {
     await showNotification(
       type: 'checkout_reminder',
       title: title,
       message: message,
-      data: {'days_left': daysLeft},
+      data: notificationData,
+      targetRole: 'user',
+      targetUserId: userId,
     );
   }
+  
+  // Send via OneSignal to the specific user
+  await sendNotificationToSpecificUser(
+    userId: userId,
+    title: title,
+    message: message,
+    type: 'checkout_reminder',
+    data: notificationData,
+  );
+}
   
 // Update _saveNotificationLocally method in notification_service.dart
 Future<void> _saveNotificationLocally(NotificationModel notification) async {
