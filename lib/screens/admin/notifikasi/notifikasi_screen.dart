@@ -39,50 +39,7 @@ class _NotifikasiScreenState extends State<NotifikasiScreen> {
     });
   }
   
-// Add this method to both _NotifikasiScreenState and _UserNotificationScreenState classes
-void _debugNotifications() {
-  showDialog(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        title: Text('Debug Notifications'),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('Total notifications: ${_notifications.length}', 
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-              Text('Filtered notifications: ${_filteredNotifications.length}', 
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-              Divider(),
-              ..._notifications.map((n) => Padding(
-                padding: const EdgeInsets.only(bottom: 8.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('${n.title}', style: TextStyle(fontWeight: FontWeight.bold)),
-                    Text('Type: ${n.type}'),
-                    Text('Target: ${n.targetRole ?? "None"}'),
-                    Text('User ID: ${n.targetUserId ?? "None"}'),
-                    Text('Read: ${n.isRead}'),
-                    Divider(),
-                  ],
-                ),
-              )),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Close'),
-          ),
-        ],
-      );
-    },
-  );
-}
+
 
   void _setupNotificationListeners() {
     try {
@@ -302,11 +259,6 @@ void _navigateToTenantVerification() {
             onPressed: _deleteReadNotifications,
           ),
           // Add this to the actions list in the AppBar in both notification screens
-IconButton(
-  icon: Icon(Icons.bug_report, color: Colors.black),
-  onPressed: _debugNotifications,
-  tooltip: 'Debug notifications',
-),
         ],
       ),
       body: RefreshIndicator(
@@ -339,65 +291,52 @@ IconButton(
                     itemCount: _filteredNotifications.length, // Use filtered notifications here
                     itemBuilder: (context, index) {
                       final notification = _filteredNotifications[index]; // Use filtered notifications
-                      return Dismissible(
-                        key: Key(notification.id?.toString() ?? index.toString()),
-                        background: Container(color: Colors.grey[200]),
-                        direction: DismissDirection.endToStart,
-                        onDismissed: (_) {
-                          if (notification.id != null) {
-                            _notificationService.markAsRead(notification.id!.toString());
-                            setState(() {
-                              _notifications.removeAt(index);
-                            });
-                          }
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(
-                                color: Colors.grey[300]!,
-                                width: 1.0,
-                              ),
-                            ),
-                            color: notification.isRead ? null : Color(0xFFFFE5CC),
-                          ),
-                          child: ListTile(
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                            leading: _getNotificationIcon(notification.type),
-                            title: Text(
-                              notification.title,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: notification.isRead ? FontWeight.normal : FontWeight.bold,
-                                color: Colors.black87,
-                              ),
-                            ),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                SizedBox(height: 4),
-                                Text(
-                                  notification.message,
-                                  style: TextStyle(fontSize: 14),
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  DateFormat('dd MMMM yyyy • HH:mm')
-                                      .format(notification.createdAt),
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            onTap: () => _handleNotificationTap(notification),
-                          ),
-                        ),
-                      );
+                      return Container(
+  decoration: BoxDecoration(
+    border: Border(
+      bottom: BorderSide(
+        color: Colors.grey[300]!,
+        width: 1.0,
+      ),
+    ),
+    color: notification.isRead ? null : Color(0xFFFFE5CC),
+  ),
+  child: ListTile(
+    contentPadding: EdgeInsets.symmetric(
+      horizontal: 16,
+      vertical: 8,
+    ),
+    leading: _getNotificationIcon(notification.type),
+    title: Text(
+      notification.title,
+      style: TextStyle(
+        fontSize: 16,
+        fontWeight: notification.isRead ? FontWeight.normal : FontWeight.bold,
+        color: Colors.black87,
+      ),
+    ),
+    subtitle: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(height: 4),
+        Text(
+          notification.message,
+          style: TextStyle(fontSize: 14),
+        ),
+        SizedBox(height: 4),
+        Text(
+          DateFormat('dd MMMM yyyy • HH:mm')
+              .format(notification.createdAt),
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey[600],
+          ),
+        ),
+      ],
+    ),
+    onTap: () => _handleNotificationTap(notification),
+  ),
+);
                     },
                   ),
       ),
