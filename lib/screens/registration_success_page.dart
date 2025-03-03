@@ -1,7 +1,48 @@
 import 'package:flutter/material.dart';
 import 'package:proyekkos/screens/login.dart';
+import 'package:proyekkos/data/services/notification_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class RegistrationSuccessPage extends StatelessWidget {
+  final NotificationService _notificationService = NotificationService();
+  
+  // Function to send notification to admin when "Mengerti" button is clicked
+  Future<void> _sendNotificationToAdmin(BuildContext context) async {
+    try {
+      // Get user information from SharedPreferences if available
+      final prefs = await SharedPreferences.getInstance();
+      final userName = prefs.getString('register_name') ?? 'Calon penyewa baru';
+      final userUnit = prefs.getString('register_unit') ?? 'belum ditentukan';
+      
+      // Send notification to all admins
+      await _notificationService.sendNotificationToAdmins(
+        title: 'Pendaftaran Penyewa Baru',
+        message: 'Penyewa baru $userName telah mendaftar untuk unit $userUnit dan menunggu verifikasi',
+        type: 'tenant_verification',
+        data: {
+          'timestamp': DateTime.now().toIso8601String(),
+          'target_role': 'admin',
+          'notification_source': 'registration_success',
+        },
+      );
+      
+      print('Registration notification sent to admins');
+      
+      // Navigate to login page after sending notification
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => LoginPage()),
+      );
+    } catch (e) {
+      print('Error sending registration notification: $e');
+      // Still navigate to login page even if notification fails
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => LoginPage()),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -12,9 +53,9 @@ class RegistrationSuccessPage extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-            SizedBox(height: 120),// Placeholder image - ganti dengan gambar yang sesuai
+              SizedBox(height: 120),
               Image.asset(
-                'assets/images/verif.png', // Pastikan menambahkan gambar di pubspec.yaml
+                'assets/images/verif.png',
                 width: 120,
                 height: 120,
               ),
@@ -40,12 +81,8 @@ class RegistrationSuccessPage extends StatelessWidget {
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => LoginPage()),
-                    );
-                  },
+                  // Update the onPressed callback to send notification
+                  onPressed: () => _sendNotificationToAdmin(context),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Color(0xFF4A2F1C),
                     shape: RoundedRectangleBorder(
@@ -67,4 +104,4 @@ class RegistrationSuccessPage extends StatelessWidget {
       ),
     );
   }
-} 
+}

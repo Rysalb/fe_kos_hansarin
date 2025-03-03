@@ -140,8 +140,10 @@ void _navigateToTenantVerification() {
   break;
       case 'Penyewa':
         _filteredNotifications = _notifications
-            .where((notification) => notification.type == 'tenant_verification')
-            .toList();
+            .where((notification) => 
+              notification.type == 'tenant_verification' ||
+              notification.type == 'tenant_registration')
+      .toList();
         break;
       case 'Belum Dibaca':
         _filteredNotifications = _notifications

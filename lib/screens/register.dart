@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io'show File, Platform;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:proyekkos/screens/registration_success_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class RegisterPage extends StatefulWidget {
   @override
@@ -165,6 +166,11 @@ class _RegisterPageState extends State<RegisterPage> {
       // Modify the check to handle potential null values
       if (response != null) {
         if (mounted) {
+          // Save user info temporarily for the notification
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('register_name', _nameController.text);
+          await prefs.setString('register_unit', _selectedKamar ?? 'N/A');
+
           // Show success message
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
