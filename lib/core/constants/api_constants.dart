@@ -1,8 +1,8 @@
 class ApiConstants {
   // Untuk vercel
-  static const String baseUrl = 'backend-kost-sidorame12.vercel.app/api';
-  static const String baseUrlStorage = 'backend-kost-sidorame12.vercel.app';
-  static const String baseUrlimage = 'backend-kost-sidorame12.vercel.app';
+  static const String baseUrl = 'https://backend-kost-sidorame12.vercel.app/api';
+  static const String baseUrlStorage = 'https://backend-kost-sidorame12.vercel.app';
+  static const String baseUrlimage = 'https://backend-kost-sidorame12.vercel.app';
   // Untuk iOS Simulator
   // static const String baseUrl = 'http://127.0.0.1:8000/api';
   
