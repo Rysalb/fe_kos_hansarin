@@ -359,30 +359,31 @@ class AuthService {
   }
 
   Future<void> sendResetPasswordLink() async {
-    try {
-      final token = await getToken();
-      if (token == null) throw Exception('Token tidak ditemukan');
+  try {
+    final token = await getToken();
+    if (token == null) throw Exception('Token tidak ditemukan');
 
-      final response = await http.post(
-        Uri.parse('${ApiConstants.baseUrl}/password/email'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-      );
+    final response = await http.post(
+      // Gunakan endpoint yang benar dalam middleware auth:sanctum
+      Uri.parse('${ApiConstants.baseUrl}/password/email'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+    );
 
-      print('Reset password response: ${response.body}'); // Untuk debugging
+    print('Reset password response: ${response.body}'); // Untuk debugging
 
-      if (response.statusCode != 200) {
-        final errorData = json.decode(response.body);
-        throw Exception(errorData['message'] ?? 'Gagal mengirim link reset password');
-      }
-    } catch (e) {
-      print('Reset password error: $e'); // Untuk debugging
-      throw Exception('Gagal mengirim link reset password');
+    if (response.statusCode != 200) {
+      final errorData = json.decode(response.body);
+      throw Exception(errorData['message'] ?? 'Gagal mengirim link reset password');
     }
+  } catch (e) {
+    print('Reset password error: $e'); // Untuk debugging
+    throw Exception('Gagal mengirim link reset password');
   }
+}
 
   Future<void> deleteUser(int userId) async {
     try {
@@ -404,4 +405,32 @@ class AuthService {
       throw Exception('Error: $e');
     }
   }
+
+  // Perbaiki metode sendPasswordResetEmail untuk pengguna yang tidak terautentikasi
+Future<void> sendPasswordResetEmail(String email) async {
+  try {
+    final response = await http.post(
+      // Ubah endpoint menjadi /forgot-password sesuai dengan route API
+      Uri.parse('${ApiConstants.baseUrl}/forgot-password'),
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'email': email,
+      }),
+    );
+
+    final responseData = json.decode(response.body);
+    
+    if (response.statusCode != 200) {
+      throw Exception(responseData['message'] ?? 'Gagal mengirim email reset password');
+    }
+    
+    return responseData;
+  } catch (e) {
+    print('Error sending reset password email: $e');
+    throw Exception('Gagal mengirim email reset password: $e');
+  }
+}
 }

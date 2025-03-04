@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:proyekkos/screens/admin/peraturan_kos/peraturan_kos_screen.dart';
+import 'package:proyekkos/screens/forgot_password_screen.dart';
 import 'package:proyekkos/screens/users/notifications/user_notification_screen.dart';
 import 'package:proyekkos/screens/users/order_menu/order_history_screen.dart';
 import 'package:proyekkos/screens/users/pembayaran/bayar_sewa_screen.dart';
@@ -62,6 +63,7 @@ class MyApp extends StatelessWidget {
           '/user/bayar-sewa': (context) => BayarSewaScreen(),
           '/user/notifikasi': (context) => UserNotificationScreen(),
           '/user/peraturan-kos': (context) => PeraturanKosScreen(),
+          '/forgot-password': (context) => ForgotPasswordScreen(),
         },
         debugShowCheckedModeBanner: false,
       ),

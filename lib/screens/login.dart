@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:proyekkos/screens/forgot_password_screen.dart';
 import 'package:proyekkos/screens/register.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../blocs/auth/auth_state.dart';
 import '../blocs/auth/auth_event.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 
 class LoginPage extends StatefulWidget {
   @override
@@ -278,7 +280,12 @@ class _LoginPageState extends State<LoginPage> {
 
   Widget _buildForgotPassword() {
     return TextButton(
-      onPressed: () {},
+       onPressed: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => ForgotPasswordScreen()),
+      );
+    },
       child: Text(
         'Forgot Password?',
         style: TextStyle(
